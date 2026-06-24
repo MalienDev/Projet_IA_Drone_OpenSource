@@ -218,12 +218,12 @@ ai-drone-surveillance/
 ### Phase 0 — Cadrage & environnement
 **Objectif** : lever toutes les inconnues avant de coder.
 **Checklist** :
-- Modèle de drone : type HALE (Haute Altitude Longue Endurance) ou MALE (Moyenne Altitude Longue Endurance).
+- Modèle de drone : type HALE (Haute Altitude Longue Endurance) et MALE (Moyenne Altitude Longue Endurance) Ex: Elbit Hermes 900 Starliner, MQ-9 Reaper ou RQ-4 Global Hawk.
 - Type de sortie vidéo du récepteur sol: HDMI, HD-SDI et IP.
 - Matériel disponible côté GCS: CPU modèle standard / GPU NVIDIA — modèle standard.
 - Résolution et FPS attendus du flux : Caméra thermique (HD IR) : 1280 x 1024 pixels, Caméra de jour (HD Day TV) : 4096 x 2880 pixels et enfin d'une FPS d'environ 60 images par secondes.
-- Nombre de drones simultanés visés à terme est de 10
-- Bande passante/latence typique de la liaison BLOS
+- Nombre de drones simultanés visés à terme : est de 10
+- Bande passante/latence typique de la liaison BLOS : 600 à 1000 ms
 **Livrable** : `docs/architecture.md` rempli avec ces paramètres, `.env.example` créé.
 
 ### Phase 1 — Ingestion vidéo unifiée
