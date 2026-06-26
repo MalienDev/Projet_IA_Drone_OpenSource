@@ -1,0 +1,53 @@
+services:
+  # MediaMTX - Serveur d'ingestion média unifié (RTSP/RTMP/SRT/UDP)
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: drone-surveillance-mediamtx
+    ports:
+      - "1935:1935"   # RTMP
+      - "554:554"     # RTSP
+      - "8554:8554"   # RTSP (internal)
+      - "8888:8888"   # HTTP (HLS)
+      - "8889:8889"   # RTSP over TCP
+      - "8189:8189"   # WebRTC (UDP/ICE)
+      - "8890:8890"   # SRT
+      - "8892:8892"   # MoQ
+    volumes:
+      - ./ingestion/mediamtx.yml:/mediamtx.yml:ro
+      - ./data:/data
+    restart: unless-stopped
+    networks:
+      - drone-surveillance-network
+
+  # Redis - Bus de messages pour les alertes temps réel
+  redis:
+    image: redis:7-alpine
+    container_name: drone-surveillance-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - drone-surveillance-network
+
+  # PostgreSQL - Base de données avec PostGIS
+  postgres:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: drone-surveillance-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-drone_surveillance}
+      POSTGRES_USER: ${POSTGRES_USER:-drone_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-drone_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - drone-surveillance-network
+
+networks:
+  drone-surveillance-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

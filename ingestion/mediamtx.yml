@@ -1,0 +1,12 @@
+# MediaMTX Configuration for Drone Surveillance System
+logLevel: info
+logDestinations: [stdout]
+
+paths:
+  # LOS stream - accepts RTSP input from simulator
+  drone-01-los:
+    source: publisher
+
+  # BLOS stream - accepts RTSP input from simulator  
+  drone-01-blos:
+    source: publisher
