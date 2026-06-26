@@ -84,7 +84,7 @@ Service Python qui consomme le flux MediaMTX, exécute YOLO, affiche les bboxes.
 - [ ] Service Python de consommation du flux (OpenCV/GStreamer)
 - [ ] Intégration YOLO (personnes/véhicules)
 - [ ] Intégration SAHI pour petits objets
-- [ ] Affichage des bboxes (fenêtre debug ou page web minimale)
+- [ ] Affichage des bboxes (page web minimale)
 - [ ] Mesure et documentation du FPS d'inférence
 
 ### DoD
