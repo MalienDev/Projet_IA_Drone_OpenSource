@@ -123,20 +123,50 @@ Service Python qui consomme le flux MediaMTX, exécute YOLO, affiche les bboxes.
 
 ---
 
-## Phase 3 — Tracking & logique de zones ⏸️
+## Phase 3 — Tracking & logique de zones ✅
 
 ### Objectif
 Intégrer ByteTrack et implémenter les zones d'intrusion et regroupement.
 
 ### Tâches
-- [ ] Intégration ByteTrack pour track_id stables
-- [ ] Implémentation CRUD des zones (mémoire ou JSON)
-- [ ] Détection d'intrusion (centroïde dans zone)
-- [ ] Logique de regroupement (comptage par zone/fenêtre temporelle)
-- [ ] Tests unitaires sur la logique de zones/regroupement
+- [x] Intégration ByteTrack pour track_id stables
+- [x] Implémentation CRUD des zones (mémoire ou JSON)
+- [x] Détection d'intrusion (centroïde dans zone)
+- [x] Logique de regroupement (comptage par zone/fenêtre temporelle)
+- [x] Tests unitaires sur la logique de zones/regroupement
+- [x] Intégration du tracking dans le pipeline de détection principal
+
+### Décisions techniques prises
+- **ByteTrack intégré via Ultralytics** : Utilisation de l'intégration native d'Ultralytics YOLOv8 avec `model.track(persist=True)` au lieu d'une implémentation séparée
+- **Module tracking** : Créé `ai-pipeline/tracking/tracker.py` avec classe `MultiObjectTracker` pour gérer les tracks (historique, vélocité, nettoyage)
+- **Module zones** : Créé `ai-pipeline/zones/zone_manager.py` avec Shapely pour les calculs géométriques (BSD licence)
+- **Module crowd detector** : Créé `ai-pipeline/zones/crowd_detector.py` pour la détection de regroupement avec fenêtre temporelle
+- **Types de zones** : INTRUSION, CROWD, SAFE
+- **Configuration tracking** : Ajouté `use_tracking` et `tracker_type` dans `DetectionConfig`
+- **Affichage** : Les track_id sont affichés dans les labels des bounding boxes
+
+### Livrables créés
+- ✅ `ai-pipeline/tracking/tracker.py` — Module de tracking multi-objets
+- ✅ `ai-pipeline/tracking/requirements.txt` — Dépendances tracking
+- ✅ `ai-pipeline/tracking/README.md` — Documentation du module
+- ✅ `ai-pipeline/tracking/tests/test_tracker.py` — Tests unitaires tracking (6 tests passés)
+- ✅ `ai-pipeline/zones/zone_manager.py` — Gestionnaire de zones avec Shapely
+- ✅ `ai-pipeline/zones/crowd_detector.py` — Détecteur de regroupement
+- ✅ `ai-pipeline/zones/requirements.txt` — Dépendances zones (shapely)
+- ✅ `ai-pipeline/zones/README.md` — Documentation du module
+- ✅ `ai-pipeline/zones/tests/test_zone_manager.py` — Tests unitaires zones (14 tests passés)
+- ✅ `ai-pipeline/zones/tests/test_crowd_detector.py` — Tests unitaires crowd (8 tests passés)
+- ✅ `ai-pipeline/inference/config.py` — Ajout configuration tracking (use_tracking, tracker_type)
+- ✅ `ai-pipeline/inference/detector.py` — Intégration tracking YOLO + affichage track_id
+
+### Résultats des tests
+- **Tests tracking** : 6/6 passés
+- **Tests zones** : 14/14 passés
+- **Tests crowd detector** : 8/8 passés
+- **Total tests Phase 3** : 28/28 passés
 
 ### DoD
-Tests unitaires sur la logique de zones/regroupement avec scénarios simulés.
+✅ **Validé** : Tests unitaires sur la logique de zones/regroupement avec scénarios simulés. Tracking intégré dans le pipeline principal.
 
 ---
 

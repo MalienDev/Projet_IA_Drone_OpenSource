@@ -31,6 +31,7 @@ class Detection:
     class_name: str
     confidence: float
     class_id: int
+    track_id: Optional[int] = None  # ID de tracking si activé
 
 
 class ObjectDetector:
@@ -98,13 +99,25 @@ class ObjectDetector:
     
     def _detect_with_yolo(self, frame: np.ndarray) -> List[Detection]:
         """Détection avec YOLO standard."""
-        results = self.model(
-            frame,
-            conf=self.config.confidence_threshold,
-            iou=self.config.iou_threshold,
-            imgsz=self.config.img_size,
-            verbose=False
-        )
+        # Activer le tracking si configuré
+        if self.config.use_tracking:
+            results = self.model.track(
+                frame,
+                conf=self.config.confidence_threshold,
+                iou=self.config.iou_threshold,
+                imgsz=self.config.img_size,
+                verbose=False,
+                persist=True,
+                tracker=self.config.tracker_type
+            )
+        else:
+            results = self.model(
+                frame,
+                conf=self.config.confidence_threshold,
+                iou=self.config.iou_threshold,
+                imgsz=self.config.img_size,
+                verbose=False
+            )
         
         detections = []
         for result in results:
@@ -120,11 +133,17 @@ class ObjectDetector:
                 bbox = box.xyxy[0].cpu().numpy().astype(int)
                 confidence = float(box.conf[0])
                 
+                # Récupérer l'ID de tracking si disponible
+                track_id = None
+                if self.config.use_tracking and hasattr(box, 'id') and box.id is not None:
+                    track_id = int(box.id[0])
+                
                 detections.append(Detection(
                     bbox=bbox.tolist(),
                     class_name=class_name,
                     confidence=confidence,
-                    class_id=class_id
+                    class_id=class_id,
+                    track_id=track_id
                 ))
         
         return detections
@@ -188,8 +207,12 @@ class ObjectDetector:
             # Dessiner la bounding box
             cv2.rectangle(frame_copy, (x1, y1), (x2, y2), color, 2)
             
-            # Dessiner le label avec confiance
-            label = f"{detection.class_name}: {detection.confidence:.2f}"
+            # Dessiner le label avec confiance et track_id
+            if detection.track_id is not None:
+                label = f"{detection.class_name}: {detection.confidence:.2f} [ID:{detection.track_id}]"
+            else:
+                label = f"{detection.class_name}: {detection.confidence:.2f}"
+            
             label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
             
             # Fond du label
@@ -212,9 +235,10 @@ class ObjectDetector:
                 2
             )
         
-        # Afficher le FPS
+        # Afficher le FPS et le statut de tracking
         self._update_fps()
-        fps_text = f"FPS: {self.fps:.1f}"
+        tracking_status = "ON" if self.config.use_tracking else "OFF"
+        fps_text = f"FPS: {self.fps:.1f} | Tracking: {tracking_status}"
         cv2.putText(
             frame_copy,
             fps_text,

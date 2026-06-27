@@ -28,6 +28,10 @@ class DetectionConfig:
     sahi_slice_size: int = 320  # Taille des slices pour SAHI
     sahi_overlap_ratio: float = 0.2  # Chevauchement entre slices
     
+    # Tracking multi-objets
+    use_tracking: bool = True  # Activer ByteTrack pour le suivi multi-objets
+    tracker_type: str = "bytetrack"  # Type de tracker (bytetrack, botsort)
+    
     # Device d'inférence
     device: str = "cpu"  # "cpu", "cuda", "mps"
     

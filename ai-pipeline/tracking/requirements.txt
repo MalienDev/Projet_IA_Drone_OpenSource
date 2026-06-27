@@ -1,0 +1,13 @@
+# Dépendances pour le module de tracking
+# ByteTrack est intégré nativement dans Ultralytics YOLOv8
+# Pas de dépendances supplémentaires nécessaires au-delà de celles du module inference
+# Les dépendances suivantes sont déjà dans inference/requirements.txt :
+# - ultralytics
+# - opencv-python
+# - numpy
+# - torch
+
+# Pour le tracking avancé si nécessaire :
+# cython-bbox  # Pour le calcul rapide de IoU (optionnel)
+# lap  # Pour l'assignment problem (optionnel)
+# scipy  # Pour les algorithmes d'optimisation (optionnel)

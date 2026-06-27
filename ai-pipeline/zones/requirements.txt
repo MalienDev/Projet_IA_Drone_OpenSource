@@ -1,0 +1,2 @@
+# Dépendances pour le module de zones
+shapely>=2.0.0  # Calculs géométriques (BSD licence)
