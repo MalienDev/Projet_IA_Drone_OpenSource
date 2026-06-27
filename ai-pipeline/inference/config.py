@@ -24,7 +24,7 @@ class DetectionConfig:
     iou_threshold: float = 0.45
     
     # SAHI (Small Object Detection)
-    use_sahi: bool = True
+    use_sahi: bool = False  # Désactivé par défaut sur CPU (0.15 FPS), activer pour GPU
     sahi_slice_size: int = 320  # Taille des slices pour SAHI
     sahi_overlap_ratio: float = 0.2  # Chevauchement entre slices
     

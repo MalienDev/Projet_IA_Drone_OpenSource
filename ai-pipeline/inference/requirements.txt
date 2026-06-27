@@ -9,7 +9,7 @@ torch>=2.0.0
 torchvision>=0.15.0
 
 # Small Object Detection (Slicing Aided Hyper Inference)
-sahi>=0.11.0
+sahi==0.12.1  # Pinné pour compatibilité avec model_type="ultralytics"
 
 # Image Processing
 numpy>=1.24.0

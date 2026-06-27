@@ -89,7 +89,10 @@ Service Python qui consomme le flux MediaMTX, exécute YOLO, affiche les bboxes.
 
 ### Décisions techniques prises
 - **YOLOv8n** : Modèle nano choisi pour CPU (rapide, ~3-4 FPS sur CPU standard)
-- **SAHI** : Intégré mais désactivé temporairement (API changée dans la version 0.12+, à corriger ultérieurement)
+- **SAHI** : Intégré et corrigé pour SAHI 0.12+ (model_type="ultralytics", get_sliced_prediction)
+  - **Note (2026-06-27)** : SAHI fonctionne correctement mais désactivé par défaut sur CPU (0.13 FPS)
+  - Sur CPU : 3.68 FPS sans SAHI vs 0.13 FPS avec SAHI (slicing trop coûteux)
+  - Sur GPU : SAHI recommandé pour améliorer la détection des petits objets vus d'altitude
 - **OpenCV** : Utilisé pour la consommation du flux RTSP et l'affichage des bounding boxes
 - **Configuration flexible** : Classe DetectionConfig avec variables d'environnement supportées
 - **Classes détectées** : person, bicycle, car, motorcycle, truck, bus (COCO)
@@ -107,16 +110,16 @@ Service Python qui consomme le flux MediaMTX, exécute YOLO, affiche les bboxes.
 ### Résultats du test
 - **Flux** : rtsp://localhost:8554/drone-01-los (MediaMTX)
 - **Frames traitées** : 30/30
-- **FPS mesuré** : 3.68 FPS (CPU standard, YOLOv8n)
+- **FPS sans SAHI** : 3.68 FPS (CPU standard, YOLOv8n)
+- **FPS avec SAHI** : 0.13 FPS (CPU standard, YOLOv8n + slicing)
 - **Détections** : 0 (vidéo de test vide - normal)
 - **Statut** : Pipeline technique fonctionnel
 
 ### DoD
-✅ **Validé** : Le pipeline de détection fonctionne correctement. FPS acceptable (3.68 FPS sur CPU). Les détections visuelles seront validées avec une vraie vidéo aérienne dans la Phase 9.
+✅ **Validé** : Le pipeline de détection fonctionne correctement. SAHI intégré et corrigé pour compatibilité 0.12+. FPS acceptable sans SAHI (3.68 FPS). SAHI désactivé par défaut sur CPU (trop lent), à activer sur GPU pour améliorer détection petits objets.
 
 ### Points à améliorer
-- Corriger l'intégration SAHI (API changée dans sahi 0.12+)
-- Tester avec une vraie vidéo aérienne (dataset VisDrone) pour valider les détections visuelles
+- Tester avec une vraie vidéo aérienne (dataset VisDrone) pour valider les détections visuelles (Phase 9)
 
 ---
 

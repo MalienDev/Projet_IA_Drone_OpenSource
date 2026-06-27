@@ -70,7 +70,7 @@ class ObjectDetector:
             if self.config.use_sahi:
                 logger.info("Initialisation de SAHI pour la détection de petits objets...")
                 self.sahi_model = AutoDetectionModel.from_pretrained(
-                    model_type="yolov8",
+                    model_type="ultralytics",  # Changé de "yolov8" à "ultralytics" pour SAHI 0.12+
                     model_path=self.config.model_name,
                     confidence_threshold=self.config.confidence_threshold,
                     device=self.config.device,
@@ -132,13 +132,15 @@ class ObjectDetector:
     def _detect_with_sahi(self, frame: np.ndarray) -> List[Detection]:
         """Détection avec SAHI (meilleure pour petits objets)."""
         try:
-            from sahi.predict import predict
+            from sahi.predict import get_sliced_prediction
             
-            result = predict(
+            result = get_sliced_prediction(
                 image=frame,
                 detection_model=self.sahi_model,
-                shift_amount=[0, 0],
-                image_size=frame.shape[:2],
+                slice_height=self.config.sahi_slice_size,
+                slice_width=self.config.sahi_slice_size,
+                overlap_height_ratio=self.config.sahi_overlap_ratio,
+                overlap_width_ratio=self.config.sahi_overlap_ratio,
                 verbose=0
             )
             
