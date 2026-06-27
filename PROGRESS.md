@@ -236,15 +236,24 @@ Distinguer piéton vs moto par association personne↔véhicule et vitesse.
 ### Objectif
 Entraîner un modèle dédié pour la détection d'armes avec confirmation opérateur.
 
+### Dataset
+- **Source** : Weapon_Detection_for_Yolo (Kaggle) — dataset complet pré-annoté, format YOLO
+- **Décision** : Sourcing/labellisation manuelle via CVAT abandonnée au profit de ce dataset public déjà annoté
+
 ### Tâches
-- [ ] Sourcing/labellisation dataset avec CVAT
+- [ ] Validation du dataset (intégrité des fichiers, classes, structure des annotations, splits train/val/test)
+- [ ] Vérification de compatibilité du format avec Ultralytics CLI (ajustement éventuel du `data.yaml`)
 - [ ] Entraînement avec Ultralytics CLI
 - [ ] Évaluation (precision/recall, matrice de confusion)
 - [ ] Intégration avec seuil de confiance élevé + flag "à confirmer"
 - [ ] Logique de zoom de confirmation (si matériel le permet)
 
+### Décisions techniques prises
+- **Dataset** : Weapon_Detection_for_Yolo (Kaggle) utilisé tel quel plutôt qu'un labelling CVAT manuel, pour gagner du temps et bénéficier d'un volume d'images plus important
+- **Limite connue à documenter** : ce dataset est probablement constitué d'images au sol (caméras classiques), pas de vues aériennes/drone — un écart de domaine (angle, échelle, résolution) est à anticiper et à valider en Phase 9 avec de vraies images aériennes
+
 ### DoD
-Rapport de performance du modèle versionné dans `docs/`, métriques explicites et limites documentées.
+Rapport de performance du modèle versionné dans `docs/`, métriques explicites, et limites documentées (notamment l'écart potentiel entre le dataset Kaggle au sol et le cas d'usage réel vue-drone).
 
 ---
 
