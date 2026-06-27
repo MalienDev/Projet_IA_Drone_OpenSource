@@ -44,6 +44,30 @@ class TrackedObject:
                         (prev_bbox[1] + prev_bbox[3]) / 2)
         return (curr_centroid[0] - prev_centroid[0], 
                 curr_centroid[1] - prev_centroid[1])
+    
+    def get_average_speed(self, min_history: int = 5) -> float:
+        """
+        Calcule la vitesse moyenne en pixels/frame à partir de l'historique.
+        
+        Args:
+            min_history: Nombre minimum de positions requises
+            
+        Returns:
+            Vitesse moyenne en pixels/frame (magnitude du vecteur vitesse)
+        """
+        if len(self.history) < min_history:
+            return 0.0
+        
+        total_speed = 0.0
+        count = 0
+        
+        for i in range(1, len(self.history)):
+            vx, vy = self.get_velocity(self.history[i-1])
+            speed = (vx**2 + vy**2)**0.5
+            total_speed += speed
+            count += 1
+        
+        return total_speed / count if count > 0 else 0.0
 
 
 class MultiObjectTracker:

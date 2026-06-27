@@ -19,6 +19,11 @@ try:
 except ImportError:
     from config import DetectionConfig, Colors
 
+try:
+    from ..tracking.movement_classifier import MovementClassifier, MovementType
+except ImportError:
+    from tracking.movement_classifier import MovementClassifier, MovementType
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,6 +37,7 @@ class Detection:
     confidence: float
     class_id: int
     track_id: Optional[int] = None  # ID de tracking si activé
+    movement_type: Optional[str] = None  # Type de mouvement (foot, motorbike, unknown)
 
 
 class ObjectDetector:
@@ -50,9 +56,14 @@ class ObjectDetector:
         self.fps = 0.0
         self.frame_count = 0
         self.start_time = time.time()
+        self.movement_classifier = None
         
         # Initialiser le modèle
         self._load_model()
+        
+        # Initialiser le classifieur de mouvement si le tracking est activé
+        if self.config.use_tracking:
+            self.movement_classifier = MovementClassifier()
         
     def _load_model(self):
         """Charge le modèle YOLO et initialise SAHI si configuré."""
@@ -120,6 +131,9 @@ class ObjectDetector:
             )
         
         detections = []
+        person_tracks = []
+        motorcycle_tracks = []
+        
         for result in results:
             boxes = result.boxes
             for box in boxes:
@@ -138,13 +152,59 @@ class ObjectDetector:
                 if self.config.use_tracking and hasattr(box, 'id') and box.id is not None:
                     track_id = int(box.id[0])
                 
-                detections.append(Detection(
+                detection = Detection(
                     bbox=bbox.tolist(),
                     class_name=class_name,
                     confidence=confidence,
                     class_id=class_id,
                     track_id=track_id
-                ))
+                )
+                
+                # Collecter les tracks pour la classification de mouvement
+                if self.config.use_tracking and track_id is not None:
+                    if class_name == "person":
+                        person_tracks.append(detection)
+                    elif class_name == "motorcycle":
+                        motorcycle_tracks.append(detection)
+                
+                detections.append(detection)
+        
+        # Classifier le mouvement si activé
+        if self.config.use_tracking and self.movement_classifier and person_tracks:
+            # Créer des objets TrackedObject temporaires pour la classification
+            from ..tracking.tracker import TrackedObject
+            person_tracked_objects = []
+            for det in person_tracks:
+                tracked_obj = TrackedObject(
+                    track_id=det.track_id,
+                    class_name=det.class_name,
+                    bbox=det.bbox,
+                    confidence=det.confidence,
+                    class_id=det.class_id
+                )
+                person_tracked_objects.append(tracked_obj)
+            
+            moto_tracked_objects = []
+            for det in motorcycle_tracks:
+                tracked_obj = TrackedObject(
+                    track_id=det.track_id,
+                    class_name=det.class_name,
+                    bbox=det.bbox,
+                    confidence=det.confidence,
+                    class_id=det.class_id
+                )
+                moto_tracked_objects.append(tracked_obj)
+            
+            # Classifier
+            classifications = self.movement_classifier.classify(
+                person_tracked_objects, moto_tracked_objects
+            )
+            
+            # Appliquer les classifications aux détections
+            classification_map = {c.track_id: c for c in classifications}
+            for det in detections:
+                if det.track_id in classification_map:
+                    det.movement_type = classification_map[det.track_id].movement_type.value
         
         return detections
     
@@ -207,9 +267,10 @@ class ObjectDetector:
             # Dessiner la bounding box
             cv2.rectangle(frame_copy, (x1, y1), (x2, y2), color, 2)
             
-            # Dessiner le label avec confiance et track_id
+            # Dessiner le label avec confiance, track_id et mouvement
             if detection.track_id is not None:
-                label = f"{detection.class_name}: {detection.confidence:.2f} [ID:{detection.track_id}]"
+                movement_str = f" [{detection.movement_type}]" if detection.movement_type else ""
+                label = f"{detection.class_name}: {detection.confidence:.2f} [ID:{detection.track_id}]{movement_str}"
             else:
                 label = f"{detection.class_name}: {detection.confidence:.2f}"
             
