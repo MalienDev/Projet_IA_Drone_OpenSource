@@ -9,6 +9,7 @@ import time
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 import logging
+import os
 
 from ultralytics import YOLO
 from sahi import AutoDetectionModel
@@ -23,6 +24,15 @@ try:
     from ..tracking.movement_classifier import MovementClassifier, MovementType
 except ImportError:
     from tracking.movement_classifier import MovementClassifier, MovementType
+
+try:
+    from ..rules.engine import RuleEngine, AlertType, Severity
+    from ..rules.alert_manager import AlertManager, CooldownConfig
+    from ..rules.publisher import EventPublisher
+except ImportError:
+    from rules.engine import RuleEngine, AlertType, Severity
+    from rules.alert_manager import AlertManager, CooldownConfig
+    from rules.publisher import EventPublisher
 
 
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +70,11 @@ class ObjectDetector:
         self.start_time = time.time()
         self.movement_classifier = None
         
+        # Moteur de règles et alertes
+        self.rule_engine = None
+        self.alert_manager = None
+        self.event_publisher = None
+        
         # Initialiser le modèle principal
         self._load_model()
         
@@ -70,6 +85,10 @@ class ObjectDetector:
         # Initialiser le classifieur de mouvement si le tracking est activé
         if self.config.use_tracking:
             self.movement_classifier = MovementClassifier()
+        
+        # Initialiser le moteur de règles si activé
+        if self.config.enable_rules_engine:
+            self._init_rules_engine()
         
     def _load_model(self):
         """Charge le modèle YOLO et initialise SAHI si configuré."""
@@ -124,12 +143,45 @@ class ObjectDetector:
             self.config.weapon_model_enabled = False
             self.weapon_model = None
     
-    def detect_frame(self, frame: np.ndarray) -> List[Detection]:
+    def _init_rules_engine(self):
+        """Initialise le moteur de règles et le publisher d'événements."""
+        try:
+            logger.info("Initialisation du moteur de règles...")
+            self.rule_engine = RuleEngine()
+            
+            # Initialiser l'alert manager avec cooldowns par défaut
+            self.alert_manager = AlertManager()
+            
+            # Initialiser le publisher Redis si activé
+            if self.config.enable_alert_publishing:
+                logger.info(f"Initialisation du publisher Redis ({self.config.redis_host}:{self.config.redis_port})...")
+                self.event_publisher = EventPublisher(
+                    redis_host=self.config.redis_host,
+                    redis_port=self.config.redis_port,
+                    channel=self.config.redis_channel,
+                    drone_id=self.config.drone_id
+                )
+                self.event_publisher.connect()
+                if not self.event_publisher.is_connected():
+                    logger.warning("Impossible de se connecter à Redis. Publication d'alertes désactivée.")
+                    self.event_publisher = None
+            else:
+                logger.info("Publication d'alertes désactivée (enable_alert_publishing=False)")
+            
+            logger.info("Moteur de règles initialisé avec succès")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'initialisation du moteur de règles: {e}")
+            self.rule_engine = None
+            self.alert_manager = None
+            self.event_publisher = None
+    
+    def detect_frame(self, frame: np.ndarray, zone_id: Optional[str] = None) -> List[Detection]:
         """
         Détecte les objets dans une frame.
         
         Args:
             frame: Image numpy array (BGR)
+            zone_id: ID de la zone (optionnel, pour les alertes)
             
         Returns:
             Liste des détections
@@ -144,6 +196,10 @@ class ObjectDetector:
         if self.config.weapon_model_enabled and self.weapon_model:
             weapon_detections = self._detect_weapons(frame)
             detections.extend(weapon_detections)
+        
+        # Traiter les alertes si le moteur de règles est activé
+        if self.config.enable_rules_engine:
+            self._process_alerts(detections, zone_id)
         
         return detections
     
@@ -326,6 +382,100 @@ class ObjectDetector:
         except Exception as e:
             logger.error(f"Erreur lors de la détection d'armes: {e}")
             return []
+    
+    def _map_detection_to_alert_type(self, detection: Detection) -> AlertType:
+        """
+        Mappe une détection à un type d'alerte.
+        
+        Args:
+            detection: Objet Detection
+        
+        Returns:
+            AlertType correspondant
+        """
+        if detection.class_name == "Weapon":
+            return AlertType.WEAPON_SUSPECTED
+        elif detection.class_name == "person":
+            if detection.movement_type == "motorbike":
+                return AlertType.MOVEMENT_MOTORBIKE
+            elif detection.movement_type == "foot":
+                return AlertType.MOVEMENT_FOOT
+            return AlertType.PERSON
+        elif detection.class_name in ["car", "truck", "bus", "motorcycle"]:
+            return AlertType.VEHICLE
+        elif detection.class_name == "bicycle":
+            return AlertType.VEHICLE
+        else:
+            return AlertType.PERSON  # Default
+    
+    def _process_alerts(self, detections: List[Detection], zone_id: Optional[str] = None):
+        """
+        Traite les détections pour générer et publier des alertes.
+        
+        Args:
+            detections: Liste des détections
+            zone_id: ID de la zone (optionnel)
+        """
+        if not self.rule_engine or not self.alert_manager:
+            return
+        
+        for detection in detections:
+            # Mapper la détection à un type d'alerte
+            alert_type = self._map_detection_to_alert_type(detection)
+            
+            # Classifier l'alerte avec le moteur de règles
+            context = {}
+            if detection.movement_type:
+                context["movement_type"] = detection.movement_type
+            
+            classification = self.rule_engine.classify_alert(
+                alert_type=alert_type,
+                confidence=detection.confidence,
+                zone_id=zone_id,
+                **context
+            )
+            
+            if not classification["should_alert"]:
+                continue
+            
+            # Vérifier le cooldown
+            track_id_str = str(detection.track_id) if detection.track_id else None
+            should_alert, reason = self.alert_manager.should_alert(
+                alert_type=alert_type,
+                zone_id=zone_id,
+                track_id=track_id_str
+            )
+            
+            if not should_alert:
+                logger.debug(f"Alerte bloquée par cooldown: {reason}")
+                continue
+            
+            # Enregistrer l'alerte
+            severity = Severity(classification["severity"])
+            self.alert_manager.record_alert(
+                alert_type=alert_type,
+                zone_id=zone_id,
+                track_id=track_id_str,
+                severity=severity
+            )
+            
+            # Publier sur Redis si activé
+            if self.event_publisher:
+                try:
+                    self.event_publisher.publish_alert(
+                        alert_type=alert_type,
+                        severity=severity,
+                        confidence=detection.confidence,
+                        bbox=detection.bbox,
+                        track_id=track_id_str,
+                        zone_id=zone_id,
+                        requires_operator_ack=classification["requires_operator_ack"] or detection.requires_confirmation
+                    )
+                    logger.info(f"Alerte publiée: {alert_type.value} (sevérité: {severity.value})")
+                except Exception as e:
+                    logger.error(f"Erreur lors de la publication de l'alerte: {e}")
+            else:
+                logger.info(f"Alerte générée (non publiée): {alert_type.value} (sevérité: {severity.value})")
     
     def draw_detections(self, frame: np.ndarray, detections: List[Detection]) -> np.ndarray:
         """

@@ -49,6 +49,14 @@ class DetectionConfig:
     # Flux vidéo
     rtsp_url: str = "rtsp://localhost:8554/drone-01-los"
     
+    # Moteur de règles et alertes
+    enable_rules_engine: bool = True  # Activer le moteur de règles
+    enable_alert_publishing: bool = False  # Activer la publication d'alertes sur Redis (nécessite Redis)
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_channel: str = "alerts"
+    drone_id: str = "drone-01"
+    
     def __post_init__(self):
         if self.target_classes is None:
             # Classes COCO pertinentes pour la surveillance drone

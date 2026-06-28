@@ -295,19 +295,68 @@ Entraîner un modèle dédié pour la détection d'armes avec confirmation opér
 
 ---
 
-## Phase 6 — Moteur de règles & alertes ⏸️
+## Phase 6 — Moteur de règles & alertes ✅
 
 ### Objectif
 Centraliser la logique métier et publier les événements sur Redis/MQTT.
 
 ### Tâches
-- [ ] Module centralisé de règles métier
-- [ ] Gestion des priorités et anti-spam/cooldown
-- [ ] Publication événements sur Redis/MQTT (JSON standardisé)
-- [ ] Tests d'intégration (rafale d'événements, vérification anti-spam)
+- [x] Module centralisé de règles métier (ai-pipeline/rules/engine.py)
+- [x] Gestion des priorités et anti-spam/cooldown (ai-pipeline/rules/alert_manager.py)
+- [x] Publication événements sur Redis (JSON standardisé section 9)
+- [x] Tests d'intégration (rafale d'événements, vérification anti-spam)
+- [x] Intégration dans le pipeline de détection principal
+
+### Décisions techniques prises
+- **Redis choisi comme bus de messages** : Plus simple pour pub/sub local que MQTT, déjà configuré dans docker-compose.yml
+- **Stratégie de cooldown** :
+  - Si track_id présent : cooldown par track (permet différents tracks dans même zone)
+  - Si pas de track_id mais zone_id : cooldown par (type, zone)
+  - Si pas de track_id ni zone_id : cooldown par type
+- **Format JSON standardisé** : Conforme à AGENTS.md section 9 (alert_id, timestamp, drone_id, type, severity, confidence, bbox, track_id, zone_id, geo, snapshot_path, clip_path, requires_operator_ack, acknowledged_by, acknowledged_at)
+- **Seuils de confiance par défaut** :
+  - Weapon : 0.8 (élevé pour minimiser faux positifs)
+  - Intrusion : 0.6
+  - Autres : 0.5
+- **Cooldowns par défaut** :
+  - Weapon : 300s (5 min)
+  - Intrusion : 60s (1 min)
+  - Crowd : 120s (2 min)
+  - Person/Vehicle : 30s (30 sec)
+  - Movement : 60s (1 min)
+  - Per-track : 30s (30 sec)
+- **Intégration automatique** : Le moteur de règles est activé par défaut (enable_rules_engine=True), mais la publication Redis est désactivée par défaut (enable_alert_publishing=False) pour éviter les dépendances externes
+
+### Livrables créés
+- ✅ `ai-pipeline/rules/__init__.py` — Exports publics du module
+- ✅ `ai-pipeline/rules/engine.py` — Moteur de règles (RuleEngine, AlertType, Severity, AlertPriority)
+- ✅ `ai-pipeline/rules/alert_manager.py` — Gestionnaire d'alertes avec cooldown (AlertManager, CooldownConfig)
+- ✅ `ai-pipeline/rules/publisher.py` — Publisher Redis (EventPublisher)
+- ✅ `ai-pipeline/rules/requirements.txt` — Dépendances (redis>=5.0.0)
+- ✅ `ai-pipeline/rules/README.md` — Documentation du module
+- ✅ `ai-pipeline/rules/tests/test_rules.py` — Tests unitaires (20/20 passés)
+- ✅ `ai-pipeline/rules/tests/test_integration.py` — Tests d'intégration (11/11 passés)
+- ✅ `ai-pipeline/inference/config.py` — Ajout configuration rules engine (enable_rules_engine, enable_alert_publishing, redis_host, redis_port, redis_channel, drone_id)
+- ✅ `ai-pipeline/inference/detector.py` — Intégration moteur de règles (_init_rules_engine, _map_detection_to_alert_type, _process_alerts)
+
+### Résultats des tests
+- **Tests unitaires rules** : 20/20 passés
+  - RuleEngine : 9 tests (initialisation, classification, ajustement sévérité)
+  - AlertManager : 11 tests (cooldown, per-type, per-track, per-zone, cleanup)
+- **Tests d'intégration** : 11/11 passés
+  - BurstEvents : 4 tests (rafale sans/avec cooldown, tracks différents, zones différentes)
+  - AntiSpam : 5 tests (cooldown armes, confiance faible, upgrade foule/vitesse, ack opérateur)
+  - MemoryManagement : 2 tests (cleanup old alerts, prévention bloat mémoire)
+- **Total tests Phase 6** : 31/31 passés
 
 ### DoD
-Tests d'intégration simulant une rafale d'événements, vérification de l'anti-spam.
+✅ **Validé** : Tests d'intégration simulant une rafale d'événements, vérification de l'anti-spam. Publication d'événements sur Redis avec format JSON standardisé (section 9 AGENTS.md).
+
+### Points à améliorer
+- Tester la publication Redis avec un vrai serveur Redis en cours d'exécution (actuellement testé sans connexion réelle)
+- Ajouter la possibilité de configurer les cooldowns par zone via fichier de configuration
+- Implémenter la logique de regroupement (crowd) dans le moteur de règles pour utiliser crowd_size
+- Ajouter des métriques de monitoring (nombre d'alertes publiées, taux de blocage par cooldown)
 
 ---
 
