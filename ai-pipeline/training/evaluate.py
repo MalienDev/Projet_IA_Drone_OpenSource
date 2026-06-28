@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from ultralytics import YOLO
 import json
+import torch
 
 
 def evaluate_weapon_model(
@@ -30,6 +31,11 @@ def evaluate_weapon_model(
     Returns:
         Dictionary with evaluation metrics
     """
+    # Auto-detect device: use GPU if available, else CPU
+    if device == "auto":
+        device = "0" if torch.cuda.is_available() else "cpu"
+        print(f"Auto-detected device: {device}")
+    
     # Load the trained model
     model = YOLO(model_path)
 

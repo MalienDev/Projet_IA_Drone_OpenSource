@@ -5,6 +5,7 @@ Training script for weapon detection model using Ultralytics YOLO.
 import os
 from pathlib import Path
 from ultralytics import YOLO
+import torch
 
 
 def train_weapon_model(
@@ -39,6 +40,11 @@ def train_weapon_model(
     Returns:
         Trained model path
     """
+    # Auto-detect device: use GPU if available, else CPU
+    if device == "auto":
+        device = "0" if torch.cuda.is_available() else "cpu"
+        print(f"Auto-detected device: {device}")
+    
     # Load pretrained YOLO model
     model = YOLO(f"yolov8{model_size}.pt")
 
