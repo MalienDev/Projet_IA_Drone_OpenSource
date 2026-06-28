@@ -69,8 +69,12 @@ def evaluate_weapon_model(
 
 if __name__ == "__main__":
     # Default evaluation configuration
-    model_path = "runs/train/weapon_detection/weights/best.pt"
-    data_yaml = "datasets/dataset_merged/data.yaml"
+    project_root = Path(__file__).parent.parent.parent
+    
+    # Use subset dataset for quick CPU test
+    is_cpu = not torch.cuda.is_available()
+    data_yaml = str(project_root / "datasets" / "dataset_merged" / ("data_test.yaml" if is_cpu else "data.yaml"))
+    model_path = str(project_root / "ai-pipeline" / "models" / "weapon_detection.pt")
 
     # Check if model exists
     if not os.path.exists(model_path):
@@ -91,7 +95,7 @@ if __name__ == "__main__":
     )
 
     # Save metrics to JSON
-    metrics_path = Path("runs/evaluate/weapon_detection_eval/metrics.json")
+    metrics_path = project_root / "runs" / "evaluate" / "weapon_detection_eval" / "metrics.json"
     metrics_path.parent.mkdir(parents=True, exist_ok=True)
     with open(metrics_path, "w") as f:
         json.dump(metrics, f, indent=2)

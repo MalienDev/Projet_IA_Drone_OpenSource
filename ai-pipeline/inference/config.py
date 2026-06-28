@@ -12,9 +12,14 @@ import os
 class DetectionConfig:
     """Configuration principale de la détection."""
     
-    # Modèle YOLO
+    # Modèle YOLO principal (personnes/vehicules)
     model_name: str = "yolov8n.pt"  # nano pour CPU, yolov8s/m/l/x pour GPU
     model_path: str = ""  # Chemin vers un modèle custom si vide utilise le modèle pré-entraîné
+    
+    # Modèle d'armes (optionnel)
+    weapon_model_path: str = "ai-pipeline/models/weapon_detection.pt"  # Modèle entraîné pour les armes
+    weapon_model_enabled: bool = True  # Activer la détection d'armes
+    weapon_confidence_threshold: float = 0.8  # Seuil élevé pour minimiser les faux positifs
     
     # Classes COCO à détecter
     target_classes: List[str] = None
@@ -73,6 +78,7 @@ class Colors:
     person: tuple = (0, 255, 0)      # Vert
     vehicle: tuple = (255, 0, 0)     # Rouge
     bicycle: tuple = (255, 255, 0)  # Jaune
+    weapon: tuple = (255, 0, 255)    # Magenta (pour les armes)
     default: tuple = (255, 255, 255) # Blanc
     
     @classmethod
@@ -84,6 +90,8 @@ class Colors:
             return cls.vehicle
         elif class_name == "bicycle":
             return cls.bicycle
+        elif class_name == "Weapon":
+            return cls.weapon
         return cls.default
 
 

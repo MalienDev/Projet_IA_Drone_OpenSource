@@ -38,6 +38,7 @@ class Detection:
     class_id: int
     track_id: Optional[int] = None  # ID de tracking si activé
     movement_type: Optional[str] = None  # Type de mouvement (foot, motorbike, unknown)
+    requires_confirmation: bool = False  # Flag pour les détections nécessitant confirmation opérateur (ex: armes)
 
 
 class ObjectDetector:
@@ -53,13 +54,18 @@ class ObjectDetector:
         self.config = config
         self.model = None
         self.sahi_model = None
+        self.weapon_model = None  # Modèle d'armes
         self.fps = 0.0
         self.frame_count = 0
         self.start_time = time.time()
         self.movement_classifier = None
         
-        # Initialiser le modèle
+        # Initialiser le modèle principal
         self._load_model()
+        
+        # Initialiser le modèle d'armes si activé
+        if self.config.weapon_model_enabled:
+            self._load_weapon_model()
         
         # Initialiser le classifieur de mouvement si le tracking est activé
         if self.config.use_tracking:
@@ -93,6 +99,31 @@ class ObjectDetector:
             logger.error(f"Erreur lors du chargement du modèle: {e}")
             raise
     
+    def _load_weapon_model(self):
+        """Charge le modèle de détection d'armes."""
+        import os
+        from pathlib import Path
+        
+        weapon_path = self.config.weapon_model_path
+        
+        # Vérifier si le fichier existe
+        if not os.path.exists(weapon_path):
+            logger.warning(f"Modèle d'armes non trouvé à {weapon_path}. Détection d'armes désactivée.")
+            self.config.weapon_model_enabled = False
+            self.weapon_model = None
+            return
+        
+        try:
+            logger.info(f"Chargement du modèle d'armes depuis {weapon_path}...")
+            self.weapon_model = YOLO(weapon_path)
+            self.weapon_model.to(self.config.device)
+            logger.info("Modèle d'armes chargé avec succès")
+        except Exception as e:
+            logger.error(f"Erreur lors du chargement du modèle d'armes: {e}")
+            logger.warning("Détection d'armes désactivée.")
+            self.config.weapon_model_enabled = False
+            self.weapon_model = None
+    
     def detect_frame(self, frame: np.ndarray) -> List[Detection]:
         """
         Détecte les objets dans une frame.
@@ -103,10 +134,18 @@ class ObjectDetector:
         Returns:
             Liste des détections
         """
+        # Détecter avec le modèle principal (personnes/vehicules)
         if self.config.use_sahi and self.sahi_model:
-            return self._detect_with_sahi(frame)
+            detections = self._detect_with_sahi(frame)
         else:
-            return self._detect_with_yolo(frame)
+            detections = self._detect_with_yolo(frame)
+        
+        # Détecter les armes avec le modèle secondaire si activé
+        if self.config.weapon_model_enabled and self.weapon_model:
+            weapon_detections = self._detect_weapons(frame)
+            detections.extend(weapon_detections)
+        
+        return detections
     
     def _detect_with_yolo(self, frame: np.ndarray) -> List[Detection]:
         """Détection avec YOLO standard."""
@@ -247,6 +286,47 @@ class ObjectDetector:
             logger.warning(f"Erreur SAHI, fallback sur YOLO standard: {e}")
             return self._detect_with_yolo(frame)
     
+    def _detect_weapons(self, frame: np.ndarray) -> List[Detection]:
+        """Détection d'armes avec le modèle dédié."""
+        try:
+            results = self.weapon_model(
+                frame,
+                conf=self.config.weapon_confidence_threshold,  # Seuil élevé
+                iou=self.config.iou_threshold,
+                imgsz=self.config.img_size,
+                verbose=False
+            )
+            
+            detections = []
+            for result in results:
+                boxes = result.boxes
+                for box in boxes:
+                    class_id = int(box.cls[0])
+                    class_name = self.weapon_model.names[class_id]
+                    
+                    bbox = box.xyxy[0].cpu().numpy().astype(int)
+                    confidence = float(box.conf[0])
+                    
+                    # Créer la détection avec flag de confirmation obligatoire
+                    detection = Detection(
+                        bbox=bbox.tolist(),
+                        class_name=class_name,
+                        confidence=confidence,
+                        class_id=class_id,
+                        requires_confirmation=True  # Confirmation opérateur obligatoire
+                    )
+                    
+                    detections.append(detection)
+            
+            if detections:
+                logger.info(f"Détection(s) arme(s): {len(detections)} (seuil: {self.config.weapon_confidence_threshold})")
+            
+            return detections
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la détection d'armes: {e}")
+            return []
+    
     def draw_detections(self, frame: np.ndarray, detections: List[Detection]) -> np.ndarray:
         """
         Dessine les bounding boxes sur la frame.
@@ -267,12 +347,14 @@ class ObjectDetector:
             # Dessiner la bounding box
             cv2.rectangle(frame_copy, (x1, y1), (x2, y2), color, 2)
             
-            # Dessiner le label avec confiance, track_id et mouvement
+            # Dessiner le label avec confiance, track_id, mouvement et confirmation
             if detection.track_id is not None:
                 movement_str = f" [{detection.movement_type}]" if detection.movement_type else ""
-                label = f"{detection.class_name}: {detection.confidence:.2f} [ID:{detection.track_id}]{movement_str}"
+                confirm_str = " [CONFIRM]" if detection.requires_confirmation else ""
+                label = f"{detection.class_name}: {detection.confidence:.2f} [ID:{detection.track_id}]{movement_str}{confirm_str}"
             else:
-                label = f"{detection.class_name}: {detection.confidence:.2f}"
+                confirm_str = " [CONFIRM]" if detection.requires_confirmation else ""
+                label = f"{detection.class_name}: {detection.confidence:.2f}{confirm_str}"
             
             label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
             

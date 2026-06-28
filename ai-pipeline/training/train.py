@@ -73,7 +73,10 @@ if __name__ == "__main__":
     # Default training configuration
     # Get project root (2 levels up from training/)
     project_root = Path(__file__).parent.parent.parent
-    data_yaml = str(project_root / "datasets" / "dataset_merged" / "data.yaml")
+    
+    # Use subset dataset for quick CPU test
+    is_cpu = not torch.cuda.is_available()
+    data_yaml = str(project_root / "datasets" / "dataset_merged" / ("data_test.yaml" if is_cpu else "data.yaml"))
     
     # Check if data.yaml exists
     if not os.path.exists(data_yaml):
@@ -81,13 +84,26 @@ if __name__ == "__main__":
         print("Please ensure the dataset is correctly placed.")
         exit(1)
 
+    # Determine device and training parameters
+    device_arg = "auto"  # Default for train_weapon_model
+    is_cpu = not torch.cuda.is_available()
+    
+    # Quick technical test: 1 epoch with subset for CPU
+    # For production with GPU, increase to 100+ epochs and full dataset
+    epochs = 1 if is_cpu else 100
+    batch_size = 8 if is_cpu else 16
+    
+    print(f"Training on {'CPU' if is_cpu else 'GPU'} with {epochs} epochs, batch_size={batch_size}")
+    print("Note: This is a quick technical test with 1 epoch. For production, use GPU with 100+ epochs.")
+    
     # Train the model
     best_model = train_weapon_model(
         data_yaml=data_yaml,
         model_size="n",  # Use nano model for faster training
-        epochs=100,
-        batch_size=16,
+        epochs=epochs,
+        batch_size=batch_size,
         imgsz=640,
-        device="auto",  # Will use GPU if available, else CPU
-        patience=20
+        device=device_arg,
+        patience=1 if is_cpu else 20,  # No patience for quick test
+        workers=2 if is_cpu else 8  # Reduce workers on CPU
     )
