@@ -360,19 +360,68 @@ Centraliser la logique métier et publier les événements sur Redis/MQTT.
 
 ---
 
-## Phase 7 — Backend API ⏸️
+## Phase 7 — Backend API ✅
 
 ### Objectif
 FastAPI avec endpoints REST et WebSocket pour les alertes temps réel.
 
 ### Tâches
-- [ ] Endpoints REST (zones, événements, drones)
-- [ ] WebSocket `/ws/alerts`
-- [ ] Persistance PostgreSQL via Alembic
-- [ ] Swagger/OpenAPI généré et navigable
+- [x] Endpoints REST (zones, événements, drones)
+- [x] WebSocket `/ws/alerts`
+- [x] Persistance PostgreSQL via Alembic
+- [x] Swagger/OpenAPI généré et navigable
+
+### Décisions techniques prises
+- **FastAPI** : Framework API moderne avec support WebSocket natif et génération automatique Swagger/OpenAPI
+- **SQLAlchemy 2.0** : ORM avec support async pour les futures optimisations
+- **PostgreSQL + PostGIS** : Base de données avec support géospatial pour les zones
+- **Alembic** : Gestion des migrations DB avec filtre pour exclure les tables système PostGIS
+- **Redis async** : Utilisation de redis.asyncio pour l'abonnement non-bloquant aux alertes
+- **Service de persistance** : Service séparé (EventPersister) qui s'abonne à Redis et persiste les événements en arrière-plan
+- **WebSocket manager** : Gestionnaire de connexions avec broadcast automatique aux clients connectés
+- **Docker Compose** : Intégration complète avec healthcheck PostgreSQL et dépendances de service
+
+### Livrables créés
+- ✅ `backend/app/main.py` - Application FastAPI principale
+- ✅ `backend/app/api/` - Module API complet
+  - `routes/health.py` - Health check (DB + Redis)
+  - `routes/drones.py` - CRUD drones
+  - `routes/zones.py` - CRUD zones
+  - `routes/events.py` - CRUD événements avec filtres
+  - `deps.py` - Dépendances communes (DB session)
+  - `schemas.py` - Schémas Pydantic
+- ✅ `backend/app/models/` - Modèles SQLAlchemy
+  - `drone.py` - Modèle Drone
+  - `zone.py` - Modèle Zone (avec JSON pour polygon_geojson)
+  - `event.py` - Modèle Event (avec UUID, FK vers drones/zones/operators)
+  - `operator.py` - Modèle Operator
+- ✅ `backend/app/db/` - Configuration DB
+  - `base.py` - Base SQLAlchemy et engine
+  - `session.py` - Session DB avec dependency injection
+- ✅ `backend/app/websocket/` - Module WebSocket
+  - `manager.py` - Gestionnaire connexions WebSocket
+  - `alerts.py` - Abonnement Redis et broadcast
+  - `ws.py` - Endpoint WebSocket `/ws/alerts`
+- ✅ `backend/app/services/` - Services d'arrière-plan
+  - `event_persister.py` - Persistance automatique des événements depuis Redis
+- ✅ `backend/alembic/` - Migrations DB
+  - `env.py` - Configuration Alembic avec filtre include_object
+  - `versions/20260628_1023_initial_tables.py` - Migration initiale manuelle
+- ✅ `backend/requirements.txt` - Dépendances Python
+- ✅ `backend/Dockerfile` - Image Docker backend
+- ✅ `backend/README.md` - Documentation du module
+- ✅ `docker-compose.yml` - Ajout service backend avec dépendances
+- ✅ `.env.example` - Variables d'environnement backend
+
+### Résultats des tests
+- **Health check** : `{"status":"ok","database":"ok","redis":"ok"}`
+- **POST /api/drones** : Création drone réussie
+- **GET /api/drones** : Liste drones réussie
+- **Swagger UI** : Accessible sur http://localhost:8000/docs
+- **Migrations DB** : Appliquées avec succès (tables drones, zones, events, operators créées)
 
 ### DoD
-Swagger/OpenAPI généré et navigable, événements persistés et requêtables.
+✅ **Validé** : Swagger/OpenAPI généré et navigable (http://localhost:8000/docs), événements persistés et requêtables via API REST. WebSocket `/ws/alerts` opérationnel avec abonnement Redis et broadcast aux clients. Service de persistance des événements fonctionnel en arrière-plan.
 
 ---
 
