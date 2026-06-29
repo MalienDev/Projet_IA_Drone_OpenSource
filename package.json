@@ -1,0 +1,24 @@
+{
+  "name": "projet_ia_drone_opensource",
+  "version": "1.0.0",
+  "description": "Système de surveillance vidéo par drone avec détection IA temps réel, entièrement local et open source. Détection de personnes, véhicules, armes, regroupements et déplacements, avec alertes vers un dashboard web.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MalienDev/Projet_IA_Drone_OpenSource.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MalienDev/Projet_IA_Drone_OpenSource/issues"
+  },
+  "homepage": "https://github.com/MalienDev/Projet_IA_Drone_OpenSource#readme"
+}

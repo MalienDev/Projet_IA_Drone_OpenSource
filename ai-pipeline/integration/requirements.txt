@@ -1,0 +1,5 @@
+# Dépendances pour le module d'intégration
+# Hérite des dépendances des autres modules (inference, rules, storage)
+
+# Pas de dépendances supplémentaires pour l'instant
+# Le script utilise uniquement les modules existants + stdlib

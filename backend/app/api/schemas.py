@@ -127,3 +127,21 @@ class HealthResponse(BaseModel):
     status: str
     database: str
     redis: str
+
+
+# Authentication schemas
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    username: str
+    role: str
+
+
+class PasswordChangeRequest(BaseModel):
+    old_password: str
+    new_password: str

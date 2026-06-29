@@ -8,12 +8,17 @@ from typing import List
 from ..schemas import Zone, ZoneCreate, ZoneUpdate
 from ..deps import DBSession
 from ...models.zone import Zone as ZoneModel
+from ...auth.dependencies import get_current_active_user
+from ...models.operator import Operator
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[Zone])
-async def list_zones(db: DBSession):
+async def list_zones(
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     List all zones.
     """
@@ -22,7 +27,11 @@ async def list_zones(db: DBSession):
 
 
 @router.get("/{zone_id}", response_model=Zone)
-async def get_zone(zone_id: str, db: DBSession):
+async def get_zone(
+    zone_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Get a specific zone by ID.
     """
@@ -33,7 +42,11 @@ async def get_zone(zone_id: str, db: DBSession):
 
 
 @router.post("/", response_model=Zone, status_code=201)
-async def create_zone(zone: ZoneCreate, db: DBSession):
+async def create_zone(
+    zone: ZoneCreate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Create a new zone.
     """
@@ -50,7 +63,12 @@ async def create_zone(zone: ZoneCreate, db: DBSession):
 
 
 @router.put("/{zone_id}", response_model=Zone)
-async def update_zone(zone_id: str, zone: ZoneUpdate, db: DBSession):
+async def update_zone(
+    zone_id: str,
+    zone: ZoneUpdate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Update a zone.
     """
@@ -68,7 +86,11 @@ async def update_zone(zone_id: str, zone: ZoneUpdate, db: DBSession):
 
 
 @router.delete("/{zone_id}", status_code=204)
-async def delete_zone(zone_id: str, db: DBSession):
+async def delete_zone(
+    zone_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Delete a zone.
     """

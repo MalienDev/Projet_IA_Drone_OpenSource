@@ -15,6 +15,7 @@ services:
     volumes:
       - ./ingestion/mediamtx.yml:/mediamtx.yml:ro
       - ./data:/data
+      - media_data:/data/media
     restart: unless-stopped
     networks:
       - drone-surveillance-network
@@ -61,6 +62,8 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_CHANNEL: alerts
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
     ports:
       - "8000:8000"
     depends_on:
@@ -72,9 +75,40 @@ services:
     networks:
       - drone-surveillance-network
 
+  # TileServer-GL - Serveur de tuiles OSM locales
+  tileserver:
+    image: maptiler/tileserver-gl:latest
+    container_name: drone-surveillance-tileserver
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/tiles:/data
+    command: ["--port", "8080", "--config", "/data/config.json"]
+    restart: unless-stopped
+    networks:
+      - drone-surveillance-network
+
+  # Frontend - React Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: drone-surveillance-frontend
+    ports:
+      - "3000:80"
+      - "3443:443"
+    volumes:
+      - ./infra/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - drone-surveillance-network
+
 networks:
   drone-surveillance-network:
     driver: bridge
 
 volumes:
   postgres_data:
+  media_data:

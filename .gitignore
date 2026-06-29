@@ -1,0 +1,62 @@
+# Datasets et données d'entraînement
+datasets/
+data/
+
+# Modèles entraînés et résultats d'exécution
+runs/
+*.pt
+*.pth
+*.onnx
+
+# Fichiers de test vidéo
+test-video.mp4
+*.mp4
+*.avi
+*.mov
+
+# Environnement virtuel
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Certificats (sensibles)
+infra/certs/*.pem
+infra/certs/*.key
+infra/certs/*.crt
+
+# Variables d'environnement
+.env
+.env.local
+
+# Cache pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Alembic
+backend/alembic/versions/*.py
+!backend/alembic/versions/README.md

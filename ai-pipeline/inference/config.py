@@ -57,6 +57,12 @@ class DetectionConfig:
     redis_channel: str = "alerts"
     drone_id: str = "drone-01"
     
+    # Stockage des médias (snapshots et clips)
+    enable_media_storage: bool = True  # Activer le stockage des médias
+    storage_dir: str = "./data/media"  # Répertoire de stockage
+    clip_duration_seconds: float = 10.0  # Durée du buffer clip en secondes
+    storage_fps: float = 30.0  # FPS pour l'enregistrement des clips
+    
     def __post_init__(self):
         if self.target_classes is None:
             # Classes COCO pertinentes pour la surveillance drone

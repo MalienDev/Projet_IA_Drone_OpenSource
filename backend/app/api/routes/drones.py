@@ -8,12 +8,17 @@ from typing import List
 from ..schemas import Drone, DroneCreate, DroneUpdate
 from ..deps import DBSession
 from ...models.drone import Drone as DroneModel
+from ...auth.dependencies import get_current_active_user
+from ...models.operator import Operator
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[Drone])
-async def list_drones(db: DBSession):
+async def list_drones(
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     List all drones.
     """
@@ -22,7 +27,11 @@ async def list_drones(db: DBSession):
 
 
 @router.get("/{drone_id}", response_model=Drone)
-async def get_drone(drone_id: str, db: DBSession):
+async def get_drone(
+    drone_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Get a specific drone by ID.
     """
@@ -33,7 +42,11 @@ async def get_drone(drone_id: str, db: DBSession):
 
 
 @router.post("/", response_model=Drone, status_code=201)
-async def create_drone(drone: DroneCreate, db: DBSession):
+async def create_drone(
+    drone: DroneCreate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Create a new drone.
     """
@@ -50,7 +63,12 @@ async def create_drone(drone: DroneCreate, db: DBSession):
 
 
 @router.put("/{drone_id}", response_model=Drone)
-async def update_drone(drone_id: str, drone: DroneUpdate, db: DBSession):
+async def update_drone(
+    drone_id: str,
+    drone: DroneUpdate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Update a drone.
     """
@@ -68,7 +86,11 @@ async def update_drone(drone_id: str, drone: DroneUpdate, db: DBSession):
 
 
 @router.delete("/{drone_id}", status_code=204)
-async def delete_drone(drone_id: str, db: DBSession):
+async def delete_drone(
+    drone_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Delete a drone.
     """

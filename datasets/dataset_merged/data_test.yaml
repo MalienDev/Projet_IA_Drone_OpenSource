@@ -1,6 +1,0 @@
-names: [Weapon]
-nc: 1
-path: C:\Users\USER\Desktop\Projet_IA_Drone_OpenSource\datasets\dataset_merged
-test: test/images
-train: train_subset/images
-val: val_subset/images

@@ -29,10 +29,12 @@ try:
     from ..rules.engine import RuleEngine, AlertType, Severity
     from ..rules.alert_manager import AlertManager, CooldownConfig
     from ..rules.publisher import EventPublisher
+    from ..storage.media_storage import MediaStorage
 except ImportError:
     from rules.engine import RuleEngine, AlertType, Severity
     from rules.alert_manager import AlertManager, CooldownConfig
     from rules.publisher import EventPublisher
+    from storage.media_storage import MediaStorage
 
 
 logging.basicConfig(level=logging.INFO)
@@ -75,6 +77,9 @@ class ObjectDetector:
         self.alert_manager = None
         self.event_publisher = None
         
+        # Stockage des médias
+        self.media_storage = None
+        
         # Initialiser le modèle principal
         self._load_model()
         
@@ -89,6 +94,10 @@ class ObjectDetector:
         # Initialiser le moteur de règles si activé
         if self.config.enable_rules_engine:
             self._init_rules_engine()
+        
+        # Initialiser le stockage des médias si activé
+        if self.config.enable_media_storage:
+            self._init_media_storage()
         
     def _load_model(self):
         """Charge le modèle YOLO et initialise SAHI si configuré."""
@@ -175,6 +184,20 @@ class ObjectDetector:
             self.alert_manager = None
             self.event_publisher = None
     
+    def _init_media_storage(self):
+        """Initialise le stockage des médias."""
+        try:
+            logger.info("Initialisation du stockage des médias...")
+            self.media_storage = MediaStorage(
+                storage_dir=self.config.storage_dir,
+                clip_duration_seconds=self.config.clip_duration_seconds,
+                fps=self.config.storage_fps
+            )
+            logger.info("Stockage des médias initialisé avec succès")
+        except Exception as e:
+            logger.error(f"Erreur lors de l'initialisation du stockage des médias: {e}")
+            self.media_storage = None
+    
     def detect_frame(self, frame: np.ndarray, zone_id: Optional[str] = None) -> List[Detection]:
         """
         Détecte les objets dans une frame.
@@ -186,6 +209,10 @@ class ObjectDetector:
         Returns:
             Liste des détections
         """
+        # Ajouter la frame au buffer de stockage si activé
+        if self.media_storage:
+            self.media_storage.add_frame(frame)
+        
         # Détecter avec le modèle principal (personnes/vehicules)
         if self.config.use_sahi and self.sahi_model:
             detections = self._detect_with_sahi(frame)
@@ -199,7 +226,7 @@ class ObjectDetector:
         
         # Traiter les alertes si le moteur de règles est activé
         if self.config.enable_rules_engine:
-            self._process_alerts(detections, zone_id)
+            self._process_alerts(detections, zone_id, frame)
         
         return detections
     
@@ -408,13 +435,14 @@ class ObjectDetector:
         else:
             return AlertType.PERSON  # Default
     
-    def _process_alerts(self, detections: List[Detection], zone_id: Optional[str] = None):
+    def _process_alerts(self, detections: List[Detection], zone_id: Optional[str] = None, frame: Optional[np.ndarray] = None):
         """
         Traite les détections pour générer et publier des alertes.
         
         Args:
             detections: Liste des détections
             zone_id: ID de la zone (optionnel)
+            frame: Frame vidéo actuelle (optionnel, pour capture médias)
         """
         if not self.rule_engine or not self.alert_manager:
             return
@@ -459,6 +487,26 @@ class ObjectDetector:
                 severity=severity
             )
             
+            # Capturer les médias si activé et frame disponible
+            snapshot_path = None
+            clip_path = None
+            if self.media_storage and frame is not None:
+                try:
+                    # Générer un alert_id temporaire
+                    import uuid
+                    alert_id = str(uuid.uuid4())
+                    
+                    # Capturer snapshot et clip
+                    snapshot_path, clip_path = self.media_storage.capture_alert_media(
+                        frame,
+                        alert_id=alert_id,
+                        bbox=tuple(detection.bbox) if detection.bbox else None,
+                        save_clip=True
+                    )
+                    logger.debug(f"Médias capturés: snapshot={snapshot_path}, clip={clip_path}")
+                except Exception as e:
+                    logger.error(f"Erreur lors de la capture des médias: {e}")
+            
             # Publier sur Redis si activé
             if self.event_publisher:
                 try:
@@ -469,6 +517,8 @@ class ObjectDetector:
                         bbox=detection.bbox,
                         track_id=track_id_str,
                         zone_id=zone_id,
+                        snapshot_path=snapshot_path,
+                        clip_path=clip_path,
                         requires_operator_ack=classification["requires_operator_ack"] or detection.requires_confirmation
                     )
                     logger.info(f"Alerte publiée: {alert_type.value} (sevérité: {severity.value})")

@@ -9,13 +9,16 @@ from datetime import datetime
 from ..schemas import Event, EventCreate, EventUpdate
 from ..deps import DBSession
 from ...models.event import Event as EventModel
+from ...auth.dependencies import get_current_active_user
+from ...models.operator import Operator
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[Event])
 async def list_events(
-    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends(),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     drone_id: Optional[str] = None,
@@ -54,7 +57,11 @@ async def list_events(
 
 
 @router.get("/{alert_id}", response_model=Event)
-async def get_event(alert_id: str, db: DBSession):
+async def get_event(
+    alert_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Get a specific event by alert ID.
     """
@@ -65,7 +72,11 @@ async def get_event(alert_id: str, db: DBSession):
 
 
 @router.post("/", response_model=Event, status_code=201)
-async def create_event(event: EventCreate, db: DBSession):
+async def create_event(
+    event: EventCreate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Create a new event (typically called by the rules engine).
     """
@@ -82,7 +93,12 @@ async def create_event(event: EventCreate, db: DBSession):
 
 
 @router.put("/{alert_id}", response_model=Event)
-async def update_event(alert_id: str, event: EventUpdate, db: DBSession):
+async def update_event(
+    alert_id: str,
+    event: EventUpdate,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Update an event (typically for acknowledging an alert).
     """
@@ -100,7 +116,11 @@ async def update_event(alert_id: str, event: EventUpdate, db: DBSession):
 
 
 @router.delete("/{alert_id}", status_code=204)
-async def delete_event(alert_id: str, db: DBSession):
+async def delete_event(
+    alert_id: str,
+    current_user: Operator = Depends(get_current_active_user),
+    db: DBSession = Depends()
+):
     """
     Delete an event.
     """
