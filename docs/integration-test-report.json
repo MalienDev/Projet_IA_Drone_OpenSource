@@ -1,9 +1,9 @@
 {
-  "test_date": "2026-06-29T16:56:37.235395",
-  "video_path": "test-video.mp4",
-  "duration_seconds": 30,
-  "actual_duration_seconds": 30.00144600868225,
-  "frames_processed": 110,
+  "test_date": "2026-06-29T18:56:38.456270",
+  "video_path": "data\\visdrone_test_video.mp4",
+  "duration_seconds": 10,
+  "actual_duration_seconds": 10.000872135162354,
+  "frames_processed": 36,
   "alerts_generated": 0,
   "latencies_ms": {
     "avg_total_ms": 271.73913043478257,
@@ -12,18 +12,17 @@
     "fps": 3.68
   },
   "video_info": {
-    "width": 1280,
-    "height": 720,
-    "synthetic": true
+    "width": 1344,
+    "height": 756,
+    "synthetic": false,
+    "source": "VisDrone2019-MOT-train dataset"
   },
   "limitations": [
-    "Vid\u00e9o de test synth\u00e9tique (pas de vraies sc\u00e8nes a\u00e9riennes)",
     "Pas de connexion Redis r\u00e9elle (alertes non publi\u00e9es)",
     "Test sur CPU (pas de GPU pour SAHI)",
     "Latence mesur\u00e9e = d\u00e9tection IA uniquement (pas r\u00e9seau/dashboard)"
   ],
   "recommendations": [
-    "Tester avec une vraie vid\u00e9o a\u00e9rienne (dataset VisDrone/UAVDT)",
     "Activer Redis pour mesurer la latence bout-en-bout compl\u00e8te",
     "Tester sur GPU pour activer SAHI et am\u00e9liorer FPS",
     "Mesurer la latence jusqu'au dashboard WebSocket"

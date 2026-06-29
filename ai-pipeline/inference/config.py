@@ -35,7 +35,7 @@ class DetectionConfig:
     
     # Tracking multi-objets
     use_tracking: bool = True  # Activer ByteTrack pour le suivi multi-objets
-    tracker_type: str = "bytetrack"  # Type de tracker (bytetrack, botsort)
+    tracker_type: str = "bytetrack.yaml"  # Type de tracker (bytetrack.yaml, botsort.yaml) - utiliser le fichier YAML
     
     # Device d'inférence
     device: str = "cpu"  # "cpu", "cuda", "mps"

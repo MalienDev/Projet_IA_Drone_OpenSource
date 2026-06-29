@@ -294,7 +294,11 @@ class ObjectDetector:
         # Classifier le mouvement si activé
         if self.config.use_tracking and self.movement_classifier and person_tracks:
             # Créer des objets TrackedObject temporaires pour la classification
-            from ..tracking.tracker import TrackedObject
+            try:
+                from ..tracking.tracker import TrackedObject
+            except ImportError:
+                from tracking.tracker import TrackedObject
+            
             person_tracked_objects = []
             for det in person_tracks:
                 tracked_obj = TrackedObject(

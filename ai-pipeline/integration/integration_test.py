@@ -161,9 +161,9 @@ class IntegrationTestRunner:
                 rtsp_url=stream_url,
                 model_path="yolov8n.pt",
                 confidence_threshold=0.5,
-                use_tracking=False,  # Désactivé pour éviter l'erreur de tracker
-                enable_rules_engine=False,  # Désactivé car dépend du tracking
-                enable_alert_publishing=False  # Désactivé pour le test sans Redis
+                use_tracking=True,  # Activé avec le tracker YAML corrigé
+                enable_rules_engine=True,  # Activé pour tester le moteur de règles
+                enable_alert_publishing=True  # Activé pour tester Redis
             )
             
             # Créer le détecteur
@@ -293,18 +293,17 @@ class IntegrationTestRunner:
             "alerts_generated": self.alert_count,
             "latencies_ms": latencies,
             "video_info": {
-                "width": 1280,  # À extraire avec ffprobe
-                "height": 720,
-                "synthetic": True  # La vidéo actuelle est synthétique
+                "width": 1344,  # Résolution VisDrone
+                "height": 756,
+                "synthetic": False,  # Vraie vidéo aérienne VisDrone
+                "source": "VisDrone2019-MOT-train dataset"
             },
             "limitations": [
-                "Vidéo de test synthétique (pas de vraies scènes aériennes)",
                 "Pas de connexion Redis réelle (alertes non publiées)",
                 "Test sur CPU (pas de GPU pour SAHI)",
                 "Latence mesurée = détection IA uniquement (pas réseau/dashboard)"
             ],
             "recommendations": [
-                "Tester avec une vraie vidéo aérienne (dataset VisDrone/UAVDT)",
                 "Activer Redis pour mesurer la latence bout-en-bout complète",
                 "Tester sur GPU pour activer SAHI et améliorer FPS",
                 "Mesurer la latence jusqu'au dashboard WebSocket"
