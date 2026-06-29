@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polygon, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { useDrones } from '../hooks/useDrones'

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAlerts } from '../hooks/useAlerts'
 import { eventsApi } from '../services/api'
-import type { AlertWebSocketMessage } from '../types'
 import { Howl } from 'howler'
 import VideoReplay from './VideoReplay'
 
@@ -129,7 +128,7 @@ function AlertPanel() {
 
               {alert.clip_path && (
                 <button
-                  onClick={() => setReplayClip(alert.clip_path)}
+                  onClick={() => setReplayClip(alert.clip_path || null)}
                   className="mt-2 bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
                 >
                   Replay Clip
