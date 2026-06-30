@@ -4,8 +4,8 @@ WebSocket endpoint for real-time alerts.
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
 from .manager import manager
-from ...auth.dependencies import get_current_user_ws
-from ...models.operator import Operator
+from app.auth.dependencies import get_current_user_ws
+from app.models.operator import Operator
 
 router = APIRouter()
 

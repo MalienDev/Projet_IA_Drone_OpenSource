@@ -14,7 +14,7 @@ export function useZones() {
       setZones(data)
       setError(null)
     } catch (err) {
-      setError('Failed to fetch zones')
+      setError('Failed to fetch zones. Make sure the backend is running and database is seeded.')
       console.error(err)
     } finally {
       setLoading(false)

@@ -10,7 +10,8 @@ export function useAlerts() {
     const token = localStorage.getItem('access_token')
     if (!token) return
 
-    const wsUrl = `ws://localhost:8000/ws/alerts?token=${token}`
+    // Use relative URL for WebSocket to work through nginx proxy
+    const wsUrl = `ws://${window.location.host}/ws/alerts?token=${token}`
     
     try {
       wsRef.current = new WebSocket(wsUrl)

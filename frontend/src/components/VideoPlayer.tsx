@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Hls from 'hls.js'
 
 function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -6,27 +7,60 @@ function VideoPlayer() {
   const [connected, setConnected] = useState(false)
 
   useEffect(() => {
-    // WebRTC connection to MediaMTX
-    // MediaMTX WebRTC endpoint: http://localhost:8189/stream_name
-    const streamUrl = 'http://localhost:8189/drone-01-los'
+    // HLS connection to MediaMTX (more reliable than WebRTC for testing)
+    // MediaMTX HLS endpoint: http://localhost:8888/stream_name/index.m3u8
+    // Use relative URL to work through nginx proxy
+    const streamUrl = 'http://localhost:8888/drone-01-los/index.m3u8'
     
     if (videoRef.current) {
-      videoRef.current.src = streamUrl
-      
-      videoRef.current.onloadedmetadata = () => {
-        setConnected(true)
-        setError(null)
-      }
-      
-      videoRef.current.onerror = () => {
-        setError('Video stream not available. Make sure MediaMTX is running and the stream is active.')
-        setConnected(false)
+      // Check if HLS is supported
+      if (Hls.isSupported()) {
+        const hls = new Hls({
+          enableWorker: true,
+          lowLatencyMode: true,
+        })
+        
+        hls.loadSource(streamUrl)
+        hls.attachMedia(videoRef.current)
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          setConnected(true)
+          setError(null)
+          videoRef.current?.play().catch(console.error)
+        })
+        
+        hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
+          if (data.fatal) {
+            setError('Video stream not available. Start the simulator to publish a stream.')
+            setConnected(false)
+          }
+        })
+        
+        return () => {
+          hls.destroy()
+        }
+      } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+        // Native HLS support (Safari)
+        videoRef.current.src = streamUrl
+        
+        videoRef.current.onloadedmetadata = () => {
+          setConnected(true)
+          setError(null)
+          videoRef.current?.play().catch(console.error)
+        }
+        
+        videoRef.current.onerror = () => {
+          setError('Video stream not available. Start the simulator to publish a stream.')
+          setConnected(false)
+        }
+      } else {
+        setError('HLS is not supported in this browser.')
       }
 
       // Timeout pour détecter si le stream ne répond pas
       const timeout = setTimeout(() => {
         if (!connected) {
-          setError('Video stream not available. Make sure MediaMTX is running and the stream is active.')
+          setError('Video stream not available. Start the simulator to publish a stream.')
         }
       }, 5000)
 

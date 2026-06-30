@@ -14,7 +14,7 @@ export function useDrones() {
       setDrones(data)
       setError(null)
     } catch (err) {
-      setError('Failed to fetch drones')
+      setError('Failed to fetch drones. Make sure the backend is running and database is seeded.')
       console.error(err)
     } finally {
       setLoading(false)
