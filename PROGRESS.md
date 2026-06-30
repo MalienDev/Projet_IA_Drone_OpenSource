@@ -637,3 +637,31 @@ Volumes persistants :
 
 ### DoD
 ✅ **Validé** : Déploiement complet en une commande (`docker compose up -d`) possible. Scripts d'installation automatisés pour Windows et Linux. Système fonctionnel en HTTP par défaut. Scripts de génération de certificats TLS disponibles pour activation HTTPS optionnelle. Documentation runbook complète avec toutes les procédures opérationnelles. Checklist finale validée.
+
+---
+
+## Correction ponctuelle - WebSocket alerts 403 (30 juin 2026)
+
+### Problème constaté
+- Le dashboard tentait de se connecter à `/ws/alerts?token=...` via nginx, mais le backend FastAPI rejetait le handshake avec `403 Forbidden`.
+- Le log backend indiquait que l'authentification WebSocket échouait avant `accept()`.
+
+### Cause racine
+- `get_current_user_ws(token)` était appelé comme une fonction normale depuis la route WebSocket.
+- Comme FastAPI n'injecte pas les dépendances dans un appel manuel, le paramètre `db` restait un objet `Depends(get_db)` au lieu d'une session SQLAlchemy.
+- L'appel `db.query(...)` échouait donc avec `'Depends' object has no attribute 'query'`.
+- La route appelait aussi `websocket.accept()` puis `manager.connect()`, qui appelait lui-même `accept()`, créant un risque de double accept après correction de l'authentification.
+
+### Corrections appliquées
+- `backend/app/auth/dependencies.py` : `get_current_user_ws` exige maintenant une session DB explicite.
+- `backend/app/websocket/ws.py` : la route ouvre et ferme une session `SessionLocal()` pour valider le JWT et laisse `manager.connect()` accepter la connexion une seule fois.
+- `backend/tests/test_websocket_auth.py` : ajout de tests unitaires `unittest` couvrant token valide, token invalide et utilisateur absent.
+
+### Vérification
+- `python -m py_compile backend/app/auth/dependencies.py backend/app/websocket/ws.py backend/tests/test_websocket_auth.py`
+- Dans le conteneur backend : `python -m unittest discover -s tests -v` -> 3/3 tests passés.
+- Vérification WebSocket directe backend : connexion acceptée avec token JWT frais.
+- Vérification WebSocket via nginx frontend : `frontend proxy websocket connected`; logs nginx `101`, backend `[accepted]`.
+
+### Reste à faire
+- Recharger la page dashboard ou se reconnecter si le navigateur conserve un ancien token/retry WebSocket.

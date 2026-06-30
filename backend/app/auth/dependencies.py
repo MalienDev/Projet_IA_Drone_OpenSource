@@ -5,8 +5,6 @@ Authentication dependencies for FastAPI routes.
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from typing import Optional
-
 from ..db.session import get_db
 from ..models.operator import Operator
 from .security import decode_access_token
@@ -105,7 +103,7 @@ async def require_admin(
 
 async def get_current_user_ws(
     token: str,
-    db: Session = Depends(get_db)
+    db: Session
 ) -> Operator:
     """
     Dependency to get the current authenticated user from JWT token for WebSocket.

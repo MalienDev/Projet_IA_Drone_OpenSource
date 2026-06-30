@@ -2,9 +2,10 @@
 WebSocket endpoint for real-time alerts.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status, HTTPException
 from .manager import manager
 from app.auth.dependencies import get_current_user_ws
+from app.db.base import SessionLocal
 from app.models.operator import Operator
 
 router = APIRouter()
@@ -26,15 +27,20 @@ async def websocket_alerts(
         token: JWT authentication token (required query parameter)
     """
     # Validate JWT token
+    db = SessionLocal()
     try:
-        user: Operator = await get_current_user_ws(token)
+        user: Operator = await get_current_user_ws(token, db)
+    except HTTPException as e:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
+        print(f"WebSocket connection rejected: invalid token - {e.detail}")
+        return
     except Exception as e:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
         print(f"WebSocket connection rejected: invalid token - {e}")
         return
+    finally:
+        db.close()
 
-    # Accept connection
-    await websocket.accept()
     client_id = f"{user.username}_{id(websocket)}"
     await manager.connect(websocket, client_id)
     print(f"Client {client_id} connected (user: {user.username})")
