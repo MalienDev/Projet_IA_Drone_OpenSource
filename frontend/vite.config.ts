@@ -21,6 +21,16 @@ export default defineConfig({
         target: 'ws://localhost:8000',
         ws: true,
       },
+      '/mediamtx': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/mediamtx/, ''),
+      },
+      '/tiles': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tiles/, ''),
+      },
     },
   },
 })

@@ -1,55 +1,113 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { eventsApi } from '../services/api'
 import type { AlertWebSocketMessage } from '../types'
+import { normalizeEvent, sortAlerts, upsertAlert } from '../utils/alerts'
 
 export function useAlerts() {
   const [alerts, setAlerts] = useState<AlertWebSocketMessage[]>([])
   const [connected, setConnected] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [error, setError] = useState<string | null>(null)
+  const [lastRealtimeAlertId, setLastRealtimeAlertId] = useState<string | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
-    if (!token) return
-
-    // Use relative URL for WebSocket to work through nginx proxy
-    const wsUrl = `ws://${window.location.host}/ws/alerts?token=${token}`
-    
-    try {
-      wsRef.current = new WebSocket(wsUrl)
-
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected')
-        setConnected(true)
-      }
-
-      wsRef.current.onmessage = (event) => {
-        try {
-          const alert: AlertWebSocketMessage = JSON.parse(event.data)
-          setAlerts((prev) => [alert, ...prev])
-        } catch (error) {
-          console.error('Error parsing alert:', error)
-        }
-      }
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error)
-        setConnected(false)
-      }
-
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected')
-        setConnected(false)
-      }
-    } catch (error) {
-      console.error('Failed to create WebSocket connection:', error)
-      setConnected(false)
+    if (!token) {
+      setLoading(false)
+      return
     }
 
+    let cancelled = false
+    let reconnectTimer: number | null = null
+
+    const loadHistory = async () => {
+      try {
+        setLoading(true)
+        const events = await eventsApi.list({ limit: 100 })
+        if (!cancelled) {
+          setAlerts(sortAlerts(events.map(normalizeEvent)))
+          setError(null)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError("Historique d'alertes indisponible.")
+        }
+        console.error(err)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    const connect = () => {
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      const wsUrl = `${protocol}://${window.location.host}/ws/alerts?token=${encodeURIComponent(token)}`
+
+      try {
+        wsRef.current = new WebSocket(wsUrl)
+
+        wsRef.current.onopen = () => {
+          setConnected(true)
+          setError(null)
+        }
+
+        wsRef.current.onmessage = (event) => {
+          try {
+            const alert: AlertWebSocketMessage = JSON.parse(event.data)
+            setAlerts((prev) => upsertAlert(prev, alert))
+            setLastRealtimeAlertId(alert.alert_id)
+          } catch (parseError) {
+            console.error('Error parsing alert:', parseError)
+          }
+        }
+
+        wsRef.current.onerror = (wsError) => {
+          console.error('WebSocket error:', wsError)
+          setConnected(false)
+        }
+
+        wsRef.current.onclose = () => {
+          setConnected(false)
+          if (!cancelled) {
+            reconnectTimer = window.setTimeout(connect, 3000)
+          }
+        }
+      } catch (connectionError) {
+        console.error('Failed to create WebSocket connection:', connectionError)
+        setConnected(false)
+        if (!cancelled) {
+          reconnectTimer = window.setTimeout(connect, 3000)
+        }
+      }
+    }
+
+    loadHistory()
+    connect()
+
     return () => {
+      cancelled = true
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer)
+      }
       if (wsRef.current) {
         wsRef.current.close()
       }
     }
   }, [])
 
-  return { alerts, connected }
+  const acknowledgeAlert = useCallback(async (alertId: string) => {
+    const updated = await eventsApi.acknowledge(alertId)
+    setAlerts((prev) => upsertAlert(prev, normalizeEvent(updated)))
+  }, [])
+
+  return {
+    alerts,
+    connected,
+    loading,
+    error,
+    lastRealtimeAlertId,
+    acknowledgeAlert,
+  }
 }

@@ -8,8 +8,10 @@ function AppRoutes() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-white">Loading...</div>
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-neutral-100">
+        <div className="rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3 text-sm text-neutral-300">
+          Chargement de la console...
+        </div>
       </div>
     )
   }
