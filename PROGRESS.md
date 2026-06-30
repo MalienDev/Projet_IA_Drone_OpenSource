@@ -597,9 +597,9 @@ Authentification, TLS local, Docker Compose final et documentation.
 - [x] Documentation runbook.md (démarrage, arrêt, sauvegarde, supervision, dépannage)
 
 ### Décisions techniques prises
-- **TLS avec certificats auto-signés** : Utilisation d'OpenSSL pour générer des certificats auto-signés plutôt que mkcert (plus simple à déployer)
-- **Redirection HTTP → HTTPS** : Nginx configuré pour rediriger automatiquement le trafic HTTP vers HTTPS
-- **Ports exposés** : HTTP (3000) pour compatibilité, HTTPS (3443) pour sécurisé
+- **HTTP uniquement par défaut** : Le système fonctionne en HTTP (port 3000) pour simplifier le déploiement initial
+- **TLS optionnel** : Scripts de génération de certificats OpenSSL fournis mais HTTPS non activé par défaut
+- **Ports exposés** : HTTP (3000) uniquement. HTTPS (3443) peut être activé via configuration Nginx si nécessaire
 - **Volumes persistants** : Ajout de volume `media_data` pour persister les snapshots et clips
 - **Scripts d'installation** : Scripts PowerShell (Windows) et Bash (Linux) pour automatiser l'installation
 - **Documentation complète** : Runbook détaillé avec toutes les procédures opérationnelles
@@ -607,21 +607,20 @@ Authentification, TLS local, Docker Compose final et documentation.
 ### Livrables créés
 - ✅ `infra/certs/generate-certs.sh` — Script de génération certificats (Linux)
 - ✅ `infra/certs/generate-certs.ps1` — Script de génération certificats (Windows)
-- ✅ `frontend/nginx.conf` — Configuration Nginx avec HTTPS et redirection
-- ✅ `frontend/Dockerfile` — Mis à jour pour exposer port 443 et créer répertoire certs
-- ✅ `docker-compose.yml` — Finalisé avec volumes persistants et ports HTTPS
+- ✅ `infra/nginx/nginx.conf` — Configuration Nginx (HTTP uniquement, proxy API/WebSocket/MediaMTX)
+- ✅ `frontend/Dockerfile` — Build multi-stage avec Nginx
+- ✅ `docker-compose.yml` — Finalisé avec volumes persistants et ports HTTP
 - ✅ `scripts/install.sh` — Script d'installation Linux
 - ✅ `scripts/install.ps1` — Script d'installation Windows
 - ✅ `docs/runbook.md` — Documentation opérationnelle complète
 
-### Configuration TLS
-- **Protocoles** : TLSv1.2, TLSv1.3
-- **Ciphers** : HIGH:!aNULL:!MD5
-- **Certificats** : Auto-signés (validité 365 jours)
-- **Redirection** : HTTP (port 80) → HTTPS (port 443)
+### Configuration TLS (optionnel)
+- **Statut** : Non activé par défaut, système fonctionne en HTTP
+- **Scripts disponibles** : Certificats auto-signés peuvent être générés via OpenSSL
+- **Activation** : Voir `docs/runbook.md` section "Activer HTTPS" pour les étapes d'activation
 - **Accès dashboard** :
-  - HTTP : http://localhost:3000
-  - HTTPS : https://localhost:3443
+  - HTTP : http://localhost:3000 (par défaut)
+  - HTTPS : https://localhost:3443 (à configurer si activé)
 
 ### Structure finale docker-compose.yml
 Services configurés :
@@ -630,11 +629,11 @@ Services configurés :
 3. **PostgreSQL** : Base de données (port 5432)
 4. **Backend** : API FastAPI (port 8000)
 5. **TileServer-GL** : Tuiles OSM locales (port 8080)
-6. **Frontend** : Dashboard React (ports 3000, 3443)
+6. **Frontend** : Dashboard React (port 3000 HTTP)
 
 Volumes persistants :
 - `postgres_data` : Données PostgreSQL
 - `media_data` : Snapshots et clips vidéo
 
 ### DoD
-✅ **Validé** : Déploiement complet en une commande (`docker compose up -d`) possible. Scripts d'installation automatisés pour Windows et Linux. TLS configuré avec certificats auto-signés. Documentation runbook complète avec toutes les procédures opérationnelles. Checklist finale validée.
+✅ **Validé** : Déploiement complet en une commande (`docker compose up -d`) possible. Scripts d'installation automatisés pour Windows et Linux. Système fonctionnel en HTTP par défaut. Scripts de génération de certificats TLS disponibles pour activation HTTPS optionnelle. Documentation runbook complète avec toutes les procédures opérationnelles. Checklist finale validée.

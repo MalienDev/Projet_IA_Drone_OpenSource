@@ -47,11 +47,15 @@ if (-not (Test-Path ".env")) {
     Write-Host "✅ Fichier .env existe déjà" -ForegroundColor Green
 }
 
-# Générer les certificats TLS
+# Générer les certificats TLS (optionnel - HTTPS non activé par défaut)
 Write-Host ""
-Write-Host "🔐 Génération des certificats TLS..." -ForegroundColor Yellow
+Write-Host "🔐 Génération des certificats TLS (optionnel)..." -ForegroundColor Yellow
+Write-Host "⚠️ HTTPS n'est pas activé par défaut. Le système fonctionne en HTTP." -ForegroundColor Yellow
 if (Test-Path "infra\certs\generate-certs.ps1") {
-    & ".\infra\certs\generate-certs.ps1"
+    $generateCerts = Read-Host "Voulez-vous générer les certificats TLS pour activer HTTPS plus tard? (y/n)"
+    if ($generateCerts -eq 'y' -or $generateCerts -eq 'Y') {
+        & ".\infra\certs\generate-certs.ps1"
+    }
 } else {
     Write-Host "⚠️ Script de génération de certificats non trouvé" -ForegroundColor Yellow
 }
@@ -101,5 +105,6 @@ Write-Host "  docker compose down" -ForegroundColor White
 Write-Host ""
 Write-Host "Dashboard disponible sur :" -ForegroundColor Green
 Write-Host "  HTTP :  http://localhost:3000" -ForegroundColor White
-Write-Host "  HTTPS : https://localhost:3443" -ForegroundColor White
+Write-Host ""
+Write-Host "⚠️ HTTPS n'est pas activé par défaut. Voir runbook.md pour l'activer." -ForegroundColor Yellow
 Write-Host ""

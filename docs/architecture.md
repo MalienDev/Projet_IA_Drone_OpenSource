@@ -154,7 +154,7 @@ React + Carte + Alertes]
 | Composant | Outil |
 |---|---|
 | Conteneurisation | Docker + Docker Compose |
-| Reverse proxy / TLS local | Nginx + certificat local (mkcert) |
+| Reverse proxy / TLS local | Nginx + certificat local (OpenSSL, optionnel) |
 | Monitoring (optionnel) | Prometheus + Grafana |
 | OS recommandé | Ubuntu Server 22.04/24.04 LTS |
 
@@ -165,7 +165,7 @@ React + Carte + Alertes]
 - **Local-first** : aucune dépendance réseau externe en fonctionnement nominal (cartographie incluse)
 - **Latence cible** : < 1 à 2 secondes entre l'apparition d'un événement à l'image et l'alerte sur le dashboard
 - **Résilience** : le système doit survivre à une coupure de flux (reconnexion auto, file d'attente, pas de crash)
-- **Sécurité** : authentification sur le dashboard, TLS même en local (certificat auto-signé ou mkcert), journal d'audit des actions opérateur
+- **Sécurité** : authentification sur le dashboard, TLS optionnel en local (certificat auto-signé via OpenSSL), journal d'audit des actions opérateur
 - **Scalabilité** : conçu pour 1 drone au départ, architecture qui supporte 10 drones simultanés sans refonte
 - **Conformité légale** : la détection de personnes/véhicules/armes par drone est encadrée juridiquement selon les pays — prévoir une validation par les autorités/services compétents avant mise en production
 

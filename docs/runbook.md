@@ -87,9 +87,11 @@ FRONTEND_HTTP_PORT=3000
 FRONTEND_HTTPS_PORT=3443
 ```
 
-### 4. Générer les certificats TLS
+### 4. Configuration TLS (optionnel)
 
-Les certificats sont générés automatiquement par le script d'installation. Pour régénérer :
+Le système fonctionne actuellement en HTTP uniquement. Pour activer HTTPS :
+
+1. Générer les certificats :
 
 **Windows :**
 ```powershell
@@ -101,6 +103,9 @@ Les certificats sont générés automatiquement par le script d'installation. Po
 chmod +x infra/certs/generate-certs.sh
 ./infra/certs/generate-certs.sh
 ```
+
+2. Modifier `docker-compose.yml` pour exposer le port 443 et configurer Nginx pour HTTPS
+3. Redémarrer les services
 
 ---
 
@@ -146,7 +151,6 @@ docker compose logs -f frontend
 ### Accéder au dashboard
 
 - **HTTP** : http://localhost:3000
-- **HTTPS** : https://localhost:3443
 
 **Identifiants par défaut :**
 - Utilisateur : `admin`
@@ -440,7 +444,7 @@ python train.py --data ../datasets/dataset_merged/data.yaml --epochs 100
 
 ### Changer les mots de passe par défaut
 
-1. Connecter au dashboard : https://localhost:3443
+1. Connecter au dashboard : http://localhost:3000
 2. Login avec `admin` / `admin123`
 3. Changer le mot de passe dans les paramètres
 4. Changer `POSTGRES_PASSWORD` dans `.env`
@@ -448,11 +452,12 @@ python train.py --data ../datasets/dataset_merged/data.yaml --epochs 100
 
 ### Activer HTTPS
 
-HTTPS est activé par défaut avec des certificats auto-signés. Pour un environnement de production :
+HTTPS n'est pas activé par défaut. Pour l'activer :
 
-1. Obtenir des certificats Let's Encrypt
-2. Remplacer les certificats dans `infra/certs/`
-3. Redémarrer le frontend : `docker compose restart frontend`
+1. Générer des certificats auto-signés ou obtenir des certificats Let's Encrypt
+2. Configurer Nginx pour utiliser les certificats dans `infra/nginx/nginx.conf`
+3. Modifier `docker-compose.yml` pour exposer le port 443
+4. Redémarrer le frontend : `docker compose restart frontend`
 
 ### Restreindre l'accès réseau
 
@@ -463,7 +468,7 @@ services:
   frontend:
     ports:
       - "3000:80"   # HTTP interne uniquement
-      - "3443:443"  # HTTPS externe
+      # - "3443:443"  # HTTPS externe (à activer si HTTPS configuré)
   backend:
     ports:
       - "127.0.0.1:8000:8000"  # Accès local uniquement

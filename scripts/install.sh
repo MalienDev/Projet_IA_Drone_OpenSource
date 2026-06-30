@@ -45,12 +45,17 @@ else
     echo "✅ Fichier .env existe déjà"
 fi
 
-# Générer les certificats TLS
+# Générer les certificats TLS (optionnel - HTTPS non activé par défaut)
 echo ""
-echo "🔐 Génération des certificats TLS..."
+echo "🔐 Génération des certificats TLS (optionnel)..."
+echo "⚠️ HTTPS n'est pas activé par défaut. Le système fonctionne en HTTP."
 if [ -f "infra/certs/generate-certs.sh" ]; then
-    chmod +x infra/certs/generate-certs.sh
-    ./infra/certs/generate-certs.sh
+    read -p "Voulez-vous générer les certificats TLS pour activer HTTPS plus tard? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        chmod +x infra/certs/generate-certs.sh
+        ./infra/certs/generate-certs.sh
+    fi
 else
     echo "⚠️ Script de génération de certificats non trouvé"
 fi
@@ -94,5 +99,6 @@ echo "  docker compose down"
 echo ""
 echo "Dashboard disponible sur :"
 echo "  HTTP :  http://localhost:3000"
-echo "  HTTPS : https://localhost:3443"
+echo ""
+echo "⚠️ HTTPS n'est pas activé par défaut. Voir runbook.md pour l'activer."
 echo ""
