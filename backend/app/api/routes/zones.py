@@ -16,8 +16,8 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Zone])
 async def list_zones(
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     List all zones.
@@ -29,8 +29,8 @@ async def list_zones(
 @router.get("/{zone_id}", response_model=Zone)
 async def get_zone(
     zone_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Get a specific zone by ID.
@@ -44,8 +44,8 @@ async def get_zone(
 @router.post("/", response_model=Zone, status_code=201)
 async def create_zone(
     zone: ZoneCreate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Create a new zone.
@@ -66,8 +66,8 @@ async def create_zone(
 async def update_zone(
     zone_id: str,
     zone: ZoneUpdate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Update a zone.
@@ -88,8 +88,8 @@ async def update_zone(
 @router.delete("/{zone_id}", status_code=204)
 async def delete_zone(
     zone_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Delete a zone.

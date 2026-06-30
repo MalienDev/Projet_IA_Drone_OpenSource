@@ -17,8 +17,8 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Event])
 async def list_events(
+    db: DBSession,
     current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends(),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     drone_id: Optional[str] = None,
@@ -59,8 +59,8 @@ async def list_events(
 @router.get("/{alert_id}", response_model=Event)
 async def get_event(
     alert_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Get a specific event by alert ID.
@@ -74,8 +74,8 @@ async def get_event(
 @router.post("/", response_model=Event, status_code=201)
 async def create_event(
     event: EventCreate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Create a new event (typically called by the rules engine).
@@ -96,8 +96,8 @@ async def create_event(
 async def update_event(
     alert_id: str,
     event: EventUpdate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Update an event (typically for acknowledging an alert).
@@ -118,8 +118,8 @@ async def update_event(
 @router.delete("/{alert_id}", status_code=204)
 async def delete_event(
     alert_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Delete an event.

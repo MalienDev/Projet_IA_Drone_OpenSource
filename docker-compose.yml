@@ -96,9 +96,6 @@ services:
     container_name: drone-surveillance-frontend
     ports:
       - "3000:80"
-      - "3443:443"
-    volumes:
-      - ./infra/certs:/etc/nginx/certs:ro
     depends_on:
       - backend
     restart: unless-stopped

@@ -54,8 +54,8 @@ async def login(
 @router.post("/change-password")
 async def change_password(
     password_data: PasswordChangeRequest,
-    current_user: Operator = Depends(get_current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Change current user's password.
@@ -93,8 +93,8 @@ async def create_operator(
     username: str,
     password: str,
     role: str = "operator",
-    current_user: Operator = Depends(require_admin),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Operator = Depends(require_admin)
 ):
     """
     Create a new operator (admin only).

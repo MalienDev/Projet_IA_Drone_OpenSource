@@ -16,8 +16,8 @@ router = APIRouter()
 
 @router.get("/", response_model=List[Drone])
 async def list_drones(
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     List all drones.
@@ -29,8 +29,8 @@ async def list_drones(
 @router.get("/{drone_id}", response_model=Drone)
 async def get_drone(
     drone_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Get a specific drone by ID.
@@ -44,8 +44,8 @@ async def get_drone(
 @router.post("/", response_model=Drone, status_code=201)
 async def create_drone(
     drone: DroneCreate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Create a new drone.
@@ -66,8 +66,8 @@ async def create_drone(
 async def update_drone(
     drone_id: str,
     drone: DroneUpdate,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Update a drone.
@@ -88,8 +88,8 @@ async def update_drone(
 @router.delete("/{drone_id}", status_code=204)
 async def delete_drone(
     drone_id: str,
-    current_user: Operator = Depends(get_current_active_user),
-    db: DBSession = Depends()
+    db: DBSession,
+    current_user: Operator = Depends(get_current_active_user)
 ):
     """
     Delete a drone.
