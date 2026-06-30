@@ -14,7 +14,7 @@ from ...models.operator import Operator
 router = APIRouter()
 
 
-@router.get("/", response_model=List[Drone])
+@router.get("", response_model=List[Drone])
 async def list_drones(
     db: DBSession,
     current_user: Operator = Depends(get_current_active_user)
@@ -41,7 +41,7 @@ async def get_drone(
     return drone
 
 
-@router.post("/", response_model=Drone, status_code=201)
+@router.post("", response_model=Drone, status_code=201)
 async def create_drone(
     drone: DroneCreate,
     db: DBSession,

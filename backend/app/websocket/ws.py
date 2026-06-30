@@ -2,8 +2,10 @@
 WebSocket endpoint for real-time alerts.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
 from .manager import manager
+from ...auth.dependencies import get_current_user_ws
+from ...models.operator import Operator
 
 router = APIRouter()
 
@@ -11,7 +13,7 @@ router = APIRouter()
 @router.websocket("/ws/alerts")
 async def websocket_alerts(
     websocket: WebSocket,
-    client_id: str = Query(..., description="Unique client identifier")
+    token: str = Query(..., description="JWT authentication token")
 ):
     """
     WebSocket endpoint for real-time alert updates.
@@ -21,9 +23,21 @@ async def websocket_alerts(
 
     Args:
         websocket: WebSocket connection
-        client_id: Unique identifier for the client (required query parameter)
+        token: JWT authentication token (required query parameter)
     """
+    # Validate JWT token
+    try:
+        user: Operator = await get_current_user_ws(token)
+    except Exception as e:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
+        print(f"WebSocket connection rejected: invalid token - {e}")
+        return
+
+    # Accept connection
+    await websocket.accept()
+    client_id = f"{user.username}_{id(websocket)}"
     await manager.connect(websocket, client_id)
+    print(f"Client {client_id} connected (user: {user.username})")
 
     try:
         # Keep the connection alive and listen for client messages (if any)

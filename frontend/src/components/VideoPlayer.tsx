@@ -19,9 +19,18 @@ function VideoPlayer() {
       }
       
       videoRef.current.onerror = () => {
-        setError('Failed to connect to video stream')
+        setError('Video stream not available. Make sure MediaMTX is running and the stream is active.')
         setConnected(false)
       }
+
+      // Timeout pour détecter si le stream ne répond pas
+      const timeout = setTimeout(() => {
+        if (!connected) {
+          setError('Video stream not available. Make sure MediaMTX is running and the stream is active.')
+        }
+      }, 5000)
+
+      return () => clearTimeout(timeout)
     }
   }, [])
 

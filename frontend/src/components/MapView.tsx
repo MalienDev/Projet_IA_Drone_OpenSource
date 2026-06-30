@@ -13,18 +13,28 @@ L.Icon.Default.mergeOptions({
 })
 
 function MapView() {
-  const { drones } = useDrones()
-  const { zones } = useZones()
+  const { drones, loading: dronesLoading } = useDrones()
+  const { zones, loading: zonesLoading } = useZones()
   const [mapCenter] = useState<[number, number]>([48.8566, 2.3522]) // Paris par défaut
+  const [tileError, setTileError] = useState(false)
+
+  if (dronesLoading || zonesLoading) {
+    return (
+      <div className="h-96 w-full flex items-center justify-center bg-gray-700">
+        <p className="text-gray-300">Loading map data...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="h-96 w-full">
       <MapContainer center={mapCenter} zoom={13} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="http://localhost:8080/data/osm/{z}/{x}/{y}.png"
-          // Fallback to external tiles for development if local tiles not available
-          // url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={tileError ? "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" : "http://localhost:8080/data/osm/{z}/{x}/{y}.png"}
+          eventHandlers={{
+            tileerror: () => setTileError(true)
+          }}
         />
         
         {/* Drone markers */}

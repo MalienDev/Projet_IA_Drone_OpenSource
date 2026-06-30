@@ -1,4 +1,4 @@
-import { useAuth } from '../hooks/useAuth'
+import { useAuth } from '../contexts/AuthContext'
 import MapView from '../components/MapView'
 import VideoPlayer from '../components/VideoPlayer'
 import AlertPanel from '../components/AlertPanel'

@@ -14,7 +14,7 @@ from ...models.operator import Operator
 router = APIRouter()
 
 
-@router.get("/", response_model=List[Zone])
+@router.get("", response_model=List[Zone])
 async def list_zones(
     db: DBSession,
     current_user: Operator = Depends(get_current_active_user)
@@ -41,7 +41,7 @@ async def get_zone(
     return zone
 
 
-@router.post("/", response_model=Zone, status_code=201)
+@router.post("", response_model=Zone, status_code=201)
 async def create_zone(
     zone: ZoneCreate,
     db: DBSession,

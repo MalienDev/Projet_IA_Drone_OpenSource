@@ -17,6 +17,8 @@ tileserver:
   command: ["--port", "8080"]
 ```
 
+**Note** : TileServer-GL détecte automatiquement les fichiers `.mbtiles` dans `/data` et génère une configuration de base. Aucun fichier `config.json` manuel n'est nécessaire pour le démarrage initial.
+
 ## Téléchargement des tuiles OSM
 
 Pour utiliser des tuiles locales, vous devez télécharger des données OpenStreetMap et les convertir au format mbtiles.

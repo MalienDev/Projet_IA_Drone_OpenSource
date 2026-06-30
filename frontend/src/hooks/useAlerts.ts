@@ -11,29 +11,35 @@ export function useAlerts() {
     if (!token) return
 
     const wsUrl = `ws://localhost:8000/ws/alerts?token=${token}`
-    wsRef.current = new WebSocket(wsUrl)
+    
+    try {
+      wsRef.current = new WebSocket(wsUrl)
 
-    wsRef.current.onopen = () => {
-      console.log('WebSocket connected')
-      setConnected(true)
-    }
-
-    wsRef.current.onmessage = (event) => {
-      try {
-        const alert: AlertWebSocketMessage = JSON.parse(event.data)
-        setAlerts((prev) => [alert, ...prev])
-      } catch (error) {
-        console.error('Error parsing alert:', error)
+      wsRef.current.onopen = () => {
+        console.log('WebSocket connected')
+        setConnected(true)
       }
-    }
 
-    wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      setConnected(false)
-    }
+      wsRef.current.onmessage = (event) => {
+        try {
+          const alert: AlertWebSocketMessage = JSON.parse(event.data)
+          setAlerts((prev) => [alert, ...prev])
+        } catch (error) {
+          console.error('Error parsing alert:', error)
+        }
+      }
 
-    wsRef.current.onclose = () => {
-      console.log('WebSocket disconnected')
+      wsRef.current.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setConnected(false)
+      }
+
+      wsRef.current.onclose = () => {
+        console.log('WebSocket disconnected')
+        setConnected(false)
+      }
+    } catch (error) {
+      console.error('Failed to create WebSocket connection:', error)
       setConnected(false)
     }
 

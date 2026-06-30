@@ -1,7 +1,8 @@
 import axios from 'axios'
 import type { Drone, Zone, Event, Operator, LoginRequest, TokenResponse } from '../types'
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000'
+// Use relative path to leverage nginx proxy in Docker
+const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || ''
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -83,7 +83,7 @@ services:
       - "8080:8080"
     volumes:
       - ./data/tiles:/data
-    command: ["--port", "8080", "--config", "/data/config.json"]
+    command: ["--port", "8080"]
     restart: unless-stopped
     networks:
       - drone-surveillance-network
