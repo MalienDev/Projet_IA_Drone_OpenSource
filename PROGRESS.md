@@ -33,8 +33,11 @@ Lever toutes les inconnues avant de coder et préparer l'environnement du projet
 - **Leaflet + tuiles OSM auto-hébergées** pour la cartographie 100% locale
 
 ### Reste à faire
-- [ ] README.md (description du projet)
-- [ ] Validation Phase 0 par l'utilisateur
+- [x] README.md (description du projet)
+- [x] Validation Phase 0 par l'utilisateur
+
+### Validation
+✅ **Phase 0 validée par l'utilisateur** - 1er juillet 2026
 
 ---
 
