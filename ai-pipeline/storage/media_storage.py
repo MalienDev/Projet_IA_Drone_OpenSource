@@ -33,7 +33,8 @@ class MediaStorage:
         snapshot_dir: str = "snapshots",
         clip_dir: str = "clips",
         clip_duration_seconds: float = 10.0,
-        fps: float = 30.0
+        fps: float = 30.0,
+        public_url_prefix: str = "/media"
     ):
         """
         Initialize media storage.
@@ -44,12 +45,14 @@ class MediaStorage:
             clip_dir: Subdirectory for clips
             clip_duration_seconds: Duration of clip buffer in seconds
             fps: Frames per second for clip recording
+            public_url_prefix: URL prefix used by the dashboard to read saved media
         """
         self.storage_dir = Path(storage_dir)
         self.snapshot_dir = self.storage_dir / snapshot_dir
         self.clip_dir = self.storage_dir / clip_dir
         self.clip_duration_seconds = clip_duration_seconds
         self.fps = fps
+        self.public_url_prefix = public_url_prefix.rstrip("/")
         self.buffer_size = int(clip_duration_seconds * fps)
         
         # Circular buffer for clip recording
@@ -60,6 +63,19 @@ class MediaStorage:
         self._create_directories()
         
         logger.info(f"MediaStorage initialized: storage_dir={storage_dir}, clip_duration={clip_duration_seconds}s")
+
+    def to_public_path(self, filepath: Optional[str]) -> Optional[str]:
+        """Convert a local media file path to the dashboard URL path."""
+        if not filepath:
+            return None
+
+        path = Path(filepath)
+        try:
+            relative_path = path.resolve().relative_to(self.storage_dir.resolve())
+        except ValueError:
+            relative_path = Path(path.name)
+
+        return f"{self.public_url_prefix}/{relative_path.as_posix()}"
     
     def _create_directories(self):
         """Create storage directories if they don't exist."""

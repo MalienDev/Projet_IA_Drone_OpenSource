@@ -8,8 +8,11 @@ import cv2
 from pathlib import Path
 import tempfile
 import shutil
+import sys
 
-from ai_pipeline.storage import MediaStorage
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from storage import MediaStorage
 
 
 @pytest.fixture
@@ -75,6 +78,17 @@ class TestMediaStorage:
         assert snapshot_path is not None
         assert Path(snapshot_path).exists()
         assert "test-alert-123" in snapshot_path
+
+    def test_to_public_path(self, temp_storage_dir, sample_frame):
+        """Test converting a stored media file to a dashboard URL."""
+        storage = MediaStorage(storage_dir=temp_storage_dir)
+
+        snapshot_path = storage.capture_snapshot(sample_frame, "test-alert-123")
+        public_path = storage.to_public_path(snapshot_path)
+
+        assert public_path is not None
+        assert public_path.startswith("/media/snapshots/")
+        assert public_path.endswith(".jpg")
     
     def test_capture_snapshot_with_bbox(self, temp_storage_dir, sample_frame):
         """Test snapshot capture with bounding box crop."""

@@ -665,3 +665,47 @@ Volumes persistants :
 
 ### Reste à faire
 - Recharger la page dashboard ou se reconnecter si le navigateur conserve un ancien token/retry WebSocket.
+
+---
+
+## Validation réelle bout-en-bout VisDrone (1 juillet 2026)
+
+### Objectif
+Afficher et tester le système complet avec une vraie vidéo de drone locale (`data/visdrone_test_video.mp4`) afin de valider le trajet MediaMTX → IA → Redis → Backend → Dashboard.
+
+### Corrections appliquées
+- `frontend/src/components/VideoPlayer.tsx` : le lecteur HLS utilise désormais MediaMTX local (`http://<host>:8888`) par défaut, car le proxy `/mediamtx/` casse les redirections HLS internes de MediaMTX.
+- `infra/nginx/nginx.conf` et `docker-compose.yml` : ajout du service statique `/media/` pour exposer localement les snapshots et clips d'alerte au dashboard.
+- `ai-pipeline/storage/media_storage.py` et `ai-pipeline/inference/detector.py` : conversion des chemins médias locaux en URLs publiques `/media/...` avant publication Redis.
+- `backend/app/services/event_persister.py` : normalisation des messages Redis standard (`type`) vers le champ base/API (`event_type`) avant persistance.
+- `backend/app/api/schemas.py` : correction du type `Event.id` en UUID pour éviter les erreurs 500 lors de la lecture de l'historique.
+- `ai-pipeline/integration/real_video_e2e.py` : ajout d'un harnais de test réel automatisé.
+
+### Résultats du test réel
+- Vidéo : `data/visdrone_test_video.mp4` (VisDrone, 1344x756, 30 FPS)
+- Durée : 30 secondes
+- Frames traitées : 176
+- FPS pipeline CPU : 5.86
+- Détections : 371 (`person`: 340, `motorcycle`: 30, `bicycle`: 1)
+- Alertes Redis : 25
+- Événements persistés backend : 25
+- Types d'alertes : `movement_foot` (20), `vehicle` (4), `person` (1)
+- Rapports générés :
+  - `docs/real-video-e2e-report.json`
+  - `docs/real-video-e2e-report.md`
+
+### Vérifications
+- `python -m py_compile ai-pipeline\integration\real_video_e2e.py ai-pipeline\storage\media_storage.py ai-pipeline\inference\detector.py backend\app\services\event_persister.py backend\app\api\schemas.py`
+- `python -m pytest ai-pipeline\storage\tests\test_media_storage.py -q` → 12/12 passés
+- `docker compose exec -T backend python -m unittest discover -s tests -p test_event_persister.py -v` → 2/2 passés
+- `npm.cmd run build` → succès
+- `docker compose build backend frontend` → succès
+- API historique : `/api/events/?limit=5` retourne les alertes avec `snapshot_path` et `clip_path` en `/media/...`
+- Média dashboard : `/media/snapshots/...jpg` servi en HTTP 200 par le frontend Nginx
+
+### Notes opérationnelles
+- Pour voir le flux en direct dans le dashboard, garder le simulateur ouvert :
+  `.\ai-pipeline\simulator\simulate-los.ps1 -VideoPath .\data\visdrone_test_video.mp4 -StreamUrl rtmp://localhost:1935/drone-01-los -Fps 30 -Resolution 1344x756`
+- Le test automatisé démarre et arrête lui-même FFmpeg. Il prouve le bout-en-bout mais ne laisse pas le flux tourner après le run.
+- Les logs WebSocket 403 observés venaient d'un ancien token navigateur expiré. Une reconnexion dashboard génère un token frais.
+- Tout le test reste local : aucun flux ni média ne sort vers un service cloud.

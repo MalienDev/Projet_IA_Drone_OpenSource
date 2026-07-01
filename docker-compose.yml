@@ -98,6 +98,7 @@ services:
       - "3000:80"
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./data/media:/data/media:ro
     depends_on:
       - backend
       - mediamtx

@@ -61,6 +61,14 @@ class EventPersister:
             await self.redis_client.close()
         print("Event persister disconnected from Redis")
 
+    @staticmethod
+    def _normalize_event_data(event_data: dict) -> dict:
+        """Normalize Redis alert payloads before database persistence."""
+        normalized = dict(event_data)
+        if "event_type" not in normalized and "type" in normalized:
+            normalized["event_type"] = normalized["type"]
+        return normalized
+
     def _persist_event(self, event_data: dict):
         """
         Persist an event to the database.
@@ -70,6 +78,8 @@ class EventPersister:
         """
         db: Session = SessionLocal()
         try:
+            event_data = self._normalize_event_data(event_data)
+
             # Check if event already exists
             existing = db.query(EventModel).filter(
                 EventModel.alert_id == event_data.get("alert_id")

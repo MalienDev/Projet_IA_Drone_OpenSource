@@ -13,6 +13,12 @@ function joinUrl(baseUrl: string, streamName: string) {
   return `${base}/${streamName}/index.m3u8`
 }
 
+function getDefaultHlsBaseUrl() {
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+  const hostname = window.location.hostname || 'localhost'
+  return `${protocol}//${hostname}:8888`
+}
+
 function VideoPlayer({
   streamName = 'drone-01-los',
   title = 'Caméra principale',
@@ -24,7 +30,7 @@ function VideoPlayer({
 
   const streamUrl = useMemo(() => {
     const baseUrl = ((import.meta as any).env?.VITE_HLS_BASE_URL as string | undefined)
-      || '/mediamtx'
+      || getDefaultHlsBaseUrl()
     return joinUrl(baseUrl, streamName)
   }, [streamName])
 

@@ -5,6 +5,7 @@ Pydantic schemas for API requests and responses.
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 # Drone schemas
@@ -90,7 +91,7 @@ class EventUpdate(BaseModel):
 
 
 class Event(EventBase):
-    id: str
+    id: UUID
     acknowledged_by: Optional[str] = None
     acknowledged_at: Optional[datetime] = None
     created_at: datetime

@@ -1,0 +1,37 @@
+{
+  "test_date": "2026-07-01T15:25:02.452964+00:00",
+  "video_path": "C:\\Users\\USER\\Desktop\\Projet_IA_Drone_OpenSource\\data\\visdrone_test_video.mp4",
+  "duration_seconds": 30,
+  "stream_name": "drone-01-los",
+  "publish_url": "rtmp://localhost:1935/drone-01-los",
+  "rtsp_url": "rtsp://localhost:8554/drone-01-los",
+  "hls_url": "http://localhost:8888/drone-01-los/index.m3u8",
+  "dashboard_url": "http://localhost:3000",
+  "ai_metrics": {
+    "elapsed_seconds": 30.037991762161255,
+    "frames_processed": 176,
+    "pipeline_fps": 5.859246563270802,
+    "detections_total": 371,
+    "detection_types": {
+      "person": 340,
+      "motorcycle": 30,
+      "bicycle": 1
+    },
+    "avg_inference_latency_ms": 166.92995076829737,
+    "max_inference_latency_ms": 1682.1959018707275,
+    "min_inference_latency_ms": 96.79079055786133
+  },
+  "redis_alert_count": 25,
+  "redis_alert_types": {
+    "movement_foot": 20,
+    "vehicle": 4,
+    "person": 1
+  },
+  "backend_event_count": 25,
+  "backend_event_types": {
+    "movement_foot": 20,
+    "vehicle": 4,
+    "person": 1
+  },
+  "local_only": true
+}

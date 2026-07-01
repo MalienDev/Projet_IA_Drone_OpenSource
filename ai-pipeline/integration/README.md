@@ -16,6 +16,7 @@ Valider le flux complet du système :
 ai-pipeline/integration/
 ├── __init__.py
 ├── integration_test.py  # Script principal de test
+├── real_video_e2e.py    # Test local complet avec vraie video drone
 ├── requirements.txt
 └── README.md
 ```
@@ -35,10 +36,30 @@ python integration_test.py --video ../../test-video.mp4 --duration 30
 python integration_test.py --video /path/to/aerial-video.mp4 --duration 60
 ```
 
+### Test reel bout-en-bout avec VisDrone
+
+Depuis la racine du depot, avec Docker Compose deja lance :
+
+```powershell
+python ai-pipeline\integration\real_video_e2e.py --video data\visdrone_test_video.mp4 --duration 30
+```
+
+Ce test boucle la video vers MediaMTX, verifie le HLS, execute YOLO + ByteTrack,
+publie les alertes Redis, verifie leur persistance backend, puis genere :
+
+- `docs/real-video-e2e-report.json`
+- `docs/real-video-e2e-report.md`
+
+Le profil par defaut est CPU : SAHI et le modele armes sont desactives pour garder
+un test local rapide. Toute detection d'arme reste a confirmer par l'operateur si
+le modele armes est active explicitement.
+
 ## Paramètres
 
 - `--video` : Chemin vers la vidéo de test (défaut: `test-video.mp4`)
 - `--duration` : Durée du test en secondes (défaut: 30)
+- `--use-sahi` : Active SAHI pour petits objets, recommande seulement sur GPU
+- `--enable-weapon-model` : Active le modele armes, confirmation operateur obligatoire
 
 ## Résultats
 

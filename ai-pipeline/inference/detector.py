@@ -507,6 +507,8 @@ class ObjectDetector:
                         bbox=tuple(detection.bbox) if detection.bbox else None,
                         save_clip=True
                     )
+                    snapshot_path = self.media_storage.to_public_path(snapshot_path)
+                    clip_path = self.media_storage.to_public_path(clip_path)
                     logger.debug(f"Médias capturés: snapshot={snapshot_path}, clip={clip_path}")
                 except Exception as e:
                     logger.error(f"Erreur lors de la capture des médias: {e}")

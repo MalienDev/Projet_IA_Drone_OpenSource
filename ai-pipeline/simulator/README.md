@@ -41,6 +41,22 @@ docker compose up -d mediamtx
 .\ai-pipeline\simulator\simulate-blos.ps1
 ```
 
+### Afficher la vraie video VisDrone dans le dashboard
+
+Depuis la racine du depot :
+
+```powershell
+docker compose up -d
+.\ai-pipeline\simulator\simulate-los.ps1 -VideoPath .\data\visdrone_test_video.mp4 -StreamUrl rtmp://localhost:1935/drone-01-los -Fps 30 -Resolution 1344x756
+```
+
+Tant que cette commande reste ouverte, le dashboard peut lire le flux local :
+
+- Dashboard : http://localhost:3000
+- HLS MediaMTX : http://localhost:8888/drone-01-los/index.m3u8
+
+Connexion par defaut si la base est seedee : `admin` / `admin123`.
+
 #### Linux/Mac
 ```bash
 # LOS simulation (RTSP)
